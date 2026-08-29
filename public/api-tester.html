@@ -1,0 +1,439 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>FireInspect API Tester</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:system-ui,sans-serif;background:#0f1117;color:#e2e8f0;display:flex;height:100vh;overflow:hidden}
+a{color:inherit;text-decoration:none}
+/* Sidebar */
+#sidebar{width:260px;min-width:260px;background:#1a1d27;border-right:1px solid #2d3148;overflow-y:auto;display:flex;flex-direction:column}
+#sidebar-header{padding:16px;border-bottom:1px solid #2d3148}
+#sidebar-header h1{font-size:15px;font-weight:600;color:#fff;letter-spacing:.3px}
+#sidebar-header p{font-size:11px;color:#64748b;margin-top:2px}
+.token-box{padding:12px 16px;border-bottom:1px solid #2d3148}
+.token-box label{font-size:11px;color:#64748b;display:block;margin-bottom:4px;text-transform:uppercase;letter-spacing:.5px}
+.token-box input{width:100%;background:#0f1117;border:1px solid #2d3148;border-radius:6px;padding:6px 8px;font-size:11px;color:#94a3b8;font-family:monospace}
+.token-box input:focus{outline:none;border-color:#6366f1}
+.token-status{display:flex;align-items:center;gap:6px;margin-top:6px;font-size:11px}
+.dot{width:7px;height:7px;border-radius:50%;background:#ef4444}
+.dot.active{background:#22c55e}
+nav{flex:1;padding:8px 0}
+.nav-group{margin-bottom:2px}
+.nav-group-label{padding:10px 16px 4px;font-size:10px;font-weight:600;color:#475569;text-transform:uppercase;letter-spacing:.8px}
+.nav-item{display:flex;align-items:center;gap:8px;padding:7px 16px;cursor:pointer;font-size:12.5px;color:#94a3b8;border-left:2px solid transparent;transition:all .15s}
+.nav-item:hover{background:#232638;color:#e2e8f0}
+.nav-item.active{background:#1e2035;border-left-color:#6366f1;color:#a5b4fc}
+.method-badge{font-size:9px;font-weight:700;padding:2px 5px;border-radius:3px;min-width:36px;text-align:center}
+.GET{background:#064e3b;color:#34d399}.POST{background:#1e3a5f;color:#60a5fa}
+.PUT,.PATCH{background:#451a03;color:#fb923c}.DELETE{background:#450a0a;color:#f87171}
+/* Main panel */
+#main{flex:1;display:flex;flex-direction:column;overflow:hidden}
+#toolbar{padding:12px 20px;border-bottom:1px solid #2d3148;display:flex;gap:8px;align-items:center;background:#13161f}
+#method-sel{background:#1a1d27;border:1px solid #2d3148;color:#e2e8f0;border-radius:6px;padding:6px 10px;font-size:13px;font-weight:600;cursor:pointer}
+#url-input{flex:1;background:#1a1d27;border:1px solid #2d3148;border-radius:6px;padding:8px 12px;font-size:13px;color:#e2e8f0;font-family:monospace}
+#url-input:focus{outline:none;border-color:#6366f1}
+#send-btn{background:#6366f1;color:#fff;border:none;border-radius:6px;padding:8px 18px;font-size:13px;font-weight:600;cursor:pointer;transition:background .15s}
+#send-btn:hover{background:#4f46e5}
+#send-btn:active{background:#4338ca}
+#send-btn.loading{background:#4338ca;cursor:wait}
+#panels{flex:1;display:grid;grid-template-columns:1fr 1fr;overflow:hidden}
+.panel{display:flex;flex-direction:column;overflow:hidden;border-right:1px solid #2d3148}
+.panel:last-child{border-right:none}
+.panel-header{padding:8px 16px;border-bottom:1px solid #2d3148;background:#13161f;display:flex;align-items:center;justify-content:space-between}
+.panel-header span{font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.6px;color:#64748b}
+.panel-tabs{display:flex;gap:2px}
+.tab-btn{font-size:11px;padding:3px 10px;border-radius:4px;border:none;background:transparent;color:#64748b;cursor:pointer}
+.tab-btn.active{background:#2d3148;color:#e2e8f0}
+.panel-body{flex:1;overflow:auto;padding:0}
+textarea.body-input{width:100%;height:100%;background:#0f1117;border:none;color:#94a3b8;font-family:monospace;font-size:12px;padding:14px;resize:none;outline:none;line-height:1.6}
+.params-table{width:100%;border-collapse:collapse}
+.params-table th{font-size:10px;text-transform:uppercase;letter-spacing:.5px;color:#475569;padding:8px 14px;border-bottom:1px solid #2d3148;text-align:left;background:#13161f}
+.params-table td{padding:6px 10px;border-bottom:1px solid #1e2035}
+.params-table input{width:100%;background:#1a1d27;border:1px solid #2d3148;border-radius:4px;padding:4px 7px;font-size:12px;color:#e2e8f0;font-family:monospace}
+.params-table input:focus{outline:none;border-color:#6366f1}
+.param-name{font-size:12px;color:#94a3b8;font-family:monospace}
+.param-req{font-size:9px;padding:1px 5px;background:#450a0a;color:#f87171;border-radius:3px}
+.param-opt{font-size:9px;padding:1px 5px;background:#1e2035;color:#64748b;border-radius:3px}
+/* Response */
+#response-area{height:100%;overflow:auto;padding:14px;font-family:monospace;font-size:12px;line-height:1.6;white-space:pre-wrap;word-break:break-all;color:#94a3b8}
+#status-bar{padding:6px 16px;display:flex;gap:16px;align-items:center;font-size:11px;border-top:1px solid #2d3148;background:#13161f}
+.status-ok{color:#22c55e;font-weight:600}.status-err{color:#ef4444;font-weight:600}.status-muted{color:#64748b}
+/* Syntax highlight */
+.json-key{color:#7dd3fc}.json-str{color:#86efac}.json-num{color:#fbbf24}.json-bool{color:#c084fc}.json-null{color:#94a3b8}
+/* Endpoint desc panel */
+#desc-panel{padding:14px 16px;font-size:12px;color:#64748b;border-bottom:1px solid #2d3148;line-height:1.6;background:#13161f}
+#desc-panel strong{color:#94a3b8}
+.desc-none{display:none}
+</style>
+</head>
+<body>
+
+<aside id="sidebar">
+  <div id="sidebar-header">
+    <h1>FireInspect API</h1>
+    <p>localhost:8000</p>
+  </div>
+  <div class="token-box">
+    <label>Bearer Token</label>
+    <input id="token-input" type="text" placeholder="Paste token after login..." />
+    <div class="token-status">
+      <div class="dot" id="token-dot"></div>
+      <span id="token-label" style="color:#64748b">No token — login first</span>
+    </div>
+  </div>
+  <nav id="nav"></nav>
+</aside>
+
+<div id="main">
+  <div id="desc-panel" class="desc-none" id="desc-panel"></div>
+  <div id="toolbar">
+    <select id="method-sel">
+      <option>GET</option><option>POST</option><option>PUT</option>
+      <option>PATCH</option><option>DELETE</option>
+    </select>
+    <input id="url-input" type="text" value="http://localhost:8000/api/v1/auth/login" />
+    <button id="send-btn" onclick="sendRequest()">Send</button>
+  </div>
+  <div id="panels">
+    <div class="panel">
+      <div class="panel-header">
+        <span>Request</span>
+        <div class="panel-tabs">
+          <button class="tab-btn active" onclick="switchTab('body')">Body</button>
+          <button class="tab-btn" onclick="switchTab('params')">Params</button>
+          <button class="tab-btn" onclick="switchTab('headers')">Headers</button>
+        </div>
+      </div>
+      <div class="panel-body">
+        <div id="tab-body"><textarea class="body-input" id="req-body" placeholder="JSON body..."></textarea></div>
+        <div id="tab-params" style="display:none">
+          <table class="params-table">
+            <thead><tr><th>Key</th><th>Value</th><th>Type</th></tr></thead>
+            <tbody id="params-body"></tbody>
+          </table>
+        </div>
+        <div id="tab-headers" style="display:none">
+          <table class="params-table">
+            <thead><tr><th>Header</th><th>Value</th></tr></thead>
+            <tbody id="headers-body">
+              <tr><td class="param-name">Content-Type</td><td><input value="application/json"/></td></tr>
+              <tr><td class="param-name">Accept</td><td><input value="application/json"/></td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+    <div class="panel">
+      <div class="panel-header">
+        <span>Response</span>
+        <div style="display:flex;gap:8px;align-items:center">
+          <span id="resp-time" class="status-muted"></span>
+          <span id="resp-status"></span>
+          <button class="tab-btn" onclick="copyResponse()" title="Copy">Copy</button>
+        </div>
+      </div>
+      <div class="panel-body">
+        <div id="response-area">// Hit Send to see response</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+const BASE = 'http://localhost:8000/api/v1';
+
+const ENDPOINTS = [
+  { group:'Auth', method:'POST', path:'/auth/login', label:'Login',
+    desc:'Get Bearer token. No auth required.',
+    body:'{\n  "email": "admin@fireinspect.local",\n  "password": "password"\n}', params:[] },
+  { group:'Auth', method:'GET', path:'/auth/me', label:'Me', desc:'Get current user info. Requires token.', body:'', params:[] },
+  { group:'Auth', method:'POST', path:'/auth/logout', label:'Logout', desc:'Revoke current token.', body:'', params:[] },
+  { group:'Auth', method:'POST', path:'/auth/refresh', label:'Refresh Token', desc:'Rotate Bearer token.', body:'', params:[] },
+
+  { group:'Users', method:'GET', path:'/users', label:'List Users', desc:'Admin only.',
+    body:'', params:[{k:'per_page',v:'20',req:false},{k:'search',v:'',req:false},{k:'role',v:'',req:false}] },
+  { group:'Users', method:'POST', path:'/users', label:'Create User', desc:'Admin only.',
+    body:'{\n  "name": "Jane Smith",\n  "email": "jane@example.com",\n  "password": "password123",\n  "role": "user",\n  "status": "active"\n}', params:[] },
+  { group:'Users', method:'GET', path:'/users/1', label:'Get User', desc:'Replace 1 with user ID.', body:'', params:[] },
+  { group:'Users', method:'PATCH', path:'/users/1', label:'Update User',
+    body:'{\n  "name": "Jane Updated",\n  "status": "active"\n}', params:[] },
+  { group:'Users', method:'DELETE', path:'/users/1', label:'Delete User', body:'', params:[] },
+
+  { group:'Clients', method:'GET', path:'/clients', label:'List Clients', body:'',
+    params:[{k:'per_page',v:'15',req:false},{k:'status',v:'',req:false}] },
+  { group:'Clients', method:'POST', path:'/clients', label:'Create Client',
+    body:'{\n  "name": "Acme Corp",\n  "email": "contact@acme.com",\n  "phone_number": "0400000000",\n  "status": "active"\n}', params:[] },
+  { group:'Clients', method:'GET', path:'/clients/1', label:'Get Client', body:'', params:[] },
+  { group:'Clients', method:'PUT', path:'/clients/1', label:'Update Client',
+    body:'{\n  "name": "Acme Corp Updated",\n  "status": "active"\n}', params:[] },
+  { group:'Clients', method:'DELETE', path:'/clients/1', label:'Delete Client', body:'', params:[] },
+
+  { group:'Properties', method:'GET', path:'/properties', label:'List Properties', body:'',
+    params:[{k:'client_id',v:'',req:false},{k:'status',v:'',req:false},{k:'per_page',v:'15',req:false}] },
+  { group:'Properties', method:'POST', path:'/properties', label:'Create Property',
+    body:'{\n  "client_id": 1,\n  "name": "Main Street Office",\n  "formatted_address": "123 Main St, Sydney NSW 2000",\n  "status": "active"\n}', params:[] },
+  { group:'Properties', method:'GET', path:'/properties/1', label:'Get Property', body:'', params:[] },
+  { group:'Properties', method:'GET', path:'/properties/1/assets', label:'Property Assets', body:'', params:[] },
+  { group:'Properties', method:'GET', path:'/properties/1/routines', label:'Property Routines', body:'', params:[] },
+  { group:'Properties', method:'GET', path:'/properties/1/tasks', label:'Property Tasks', body:'', params:[] },
+  { group:'Properties', method:'PUT', path:'/properties/1', label:'Update Property',
+    body:'{\n  "name": "Updated Office",\n  "status": "active"\n}', params:[] },
+  { group:'Properties', method:'DELETE', path:'/properties/1', label:'Delete Property', body:'', params:[] },
+
+  { group:'Asset Types', method:'GET', path:'/asset-types', label:'List Asset Types', body:'', params:[] },
+  { group:'Asset Types', method:'POST', path:'/asset-types', label:'Create Asset Type',
+    body:'{\n  "name": "Fire Extinguisher",\n  "variants": [\n    {"name": "2.5kg", "price": 80},\n    {"name": "4.5kg", "price": 120}\n  ]\n}', params:[] },
+  { group:'Asset Types', method:'DELETE', path:'/asset-types/1', label:'Delete Asset Type', body:'', params:[] },
+
+  { group:'Assets', method:'GET', path:'/assets', label:'List Assets', body:'',
+    params:[{k:'property_id',v:'',req:false},{k:'asset_type_id',v:'',req:false},{k:'per_page',v:'20',req:false}] },
+  { group:'Assets', method:'POST', path:'/assets', label:'Create Asset',
+    body:'{\n  "property_id": 1,\n  "asset_type_id": 1,\n  "label": "FE-001",\n  "level": "Ground Floor",\n  "location": "Reception",\n  "quantity": 1,\n  "is_active": true\n}', params:[] },
+  { group:'Assets', method:'GET', path:'/assets/1', label:'Get Asset', body:'', params:[] },
+  { group:'Assets', method:'POST', path:'/assets/1/work-history', label:'Add Work History',
+    body:'{\n  "status": "pass",\n  "remarks": "Inspected — pressure OK"\n}', params:[] },
+
+  { group:'Routines', method:'GET', path:'/routines', label:'List Routines', body:'',
+    params:[{k:'property_id',v:'',req:false},{k:'asset_id',v:'',req:false},{k:'status',v:'',req:false}] },
+  { group:'Routines', method:'POST', path:'/routines', label:'Create Routine',
+    body:'{\n  "property_id": 1,\n  "asset_id": 1,\n  "frequency": ["monthly", "annually"],\n  "annual_date": "2024-07-01",\n  "start_date": "2024-01-01",\n  "status": "active"\n}', params:[] },
+  { group:'Routines', method:'GET', path:'/routines/1', label:'Get Routine', body:'', params:[] },
+  { group:'Routines', method:'PUT', path:'/routines/1', label:'Update Routine',
+    body:'{\n  "status": "paused"\n}', params:[] },
+  { group:'Routines', method:'DELETE', path:'/routines/1', label:'Delete Routine', body:'', params:[] },
+
+  { group:'Tasks', method:'GET', path:'/tasks', label:'List Tasks', body:'',
+    params:[{k:'property_id',v:'',req:false},{k:'type',v:'',req:false},{k:'status',v:'',req:false},{k:'per_page',v:'15',req:false}] },
+  { group:'Tasks', method:'POST', path:'/tasks', label:'Create Routine Task',
+    body:'{\n  "property_id": 1,\n  "routine_ids": [1],\n  "label": "Monthly Fire Check",\n  "technician_note": "Check all extinguishers"\n}', params:[] },
+  { group:'Tasks', method:'POST', path:'/tasks/on-demand', label:'Create On-Demand Task',
+    body:'{\n  "property_id": 1,\n  "asset_ids": [1],\n  "label": "Emergency Inspection"\n}', params:[] },
+  { group:'Tasks', method:'GET', path:'/tasks/1', label:'Get Task', body:'', params:[] },
+  { group:'Tasks', method:'PUT', path:'/tasks/1', label:'Update Task',
+    body:'{\n  "status": "in_progress",\n  "label": "Updated label"\n}', params:[] },
+  { group:'Tasks', method:'DELETE', path:'/tasks/1', label:'Delete Task', body:'', params:[] },
+
+  { group:'Time Sessions', method:'GET', path:'/tasks/1/time-sessions', label:'List Sessions', body:'', params:[] },
+  { group:'Time Sessions', method:'POST', path:'/tasks/1/time-sessions/start', label:'Start Timer',
+    desc:'type: travelling | working | break | other',
+    body:'{\n  "technician_id": 1,\n  "type": "working",\n  "notes": "Started onsite inspection"\n}', params:[] },
+  { group:'Time Sessions', method:'PATCH', path:'/tasks/1/time-sessions/1/end', label:'Stop Timer',
+    body:'{\n  "end_time": null,\n  "notes": "Completed inspection"\n}', params:[] },
+  { group:'Time Sessions', method:'DELETE', path:'/tasks/1/time-sessions/1', label:'Delete Session', body:'', params:[] },
+
+  { group:'Appointments', method:'POST', path:'/tasks/1/appointments', label:'Create Appointment',
+    body:'{\n  "summary": "Fire safety inspection",\n  "start_date_time": "2024-07-15 09:00:00",\n  "end_date_time": "2024-07-15 12:00:00",\n  "technician_ids": [1]\n}', params:[] },
+  { group:'Appointments', method:'GET', path:'/appointments/1', label:'Get Appointment', body:'', params:[] },
+  { group:'Appointments', method:'DELETE', path:'/appointments/1', label:'Delete Appointment', body:'', params:[] },
+
+  { group:'Technicians', method:'GET', path:'/technicians', label:'List Technicians', body:'',
+    params:[{k:'status',v:'',req:false},{k:'per_page',v:'20',req:false}] },
+  { group:'Technicians', method:'POST', path:'/technicians', label:'Create Technician',
+    body:'{\n  "full_name": "Bob Technician",\n  "email": "bob@example.com",\n  "phone_number": "0411000000",\n  "branch": "Sydney",\n  "zone": "North",\n  "status": "active"\n}', params:[] },
+  { group:'Technicians', method:'GET', path:'/technicians/1', label:'Get Technician', body:'', params:[] },
+  { group:'Technicians', method:'DELETE', path:'/technicians/1', label:'Delete Technician', body:'', params:[] },
+
+  { group:'Billings', method:'GET', path:'/billings', label:'List Billings', body:'', params:[{k:'client_id',v:'',req:false}] },
+  { group:'Billings', method:'POST', path:'/billings', label:'Create Billing',
+    body:'{\n  "client_id": 1,\n  "name": "Acme Billing Account",\n  "email": "billing@acme.com",\n  "status": "active"\n}', params:[] },
+
+  { group:'Contracts', method:'GET', path:'/contracts', label:'List Contracts', body:'', params:[{k:'property_id',v:'',req:false}] },
+  { group:'Contracts', method:'POST', path:'/contracts', label:'Create Contract',
+    body:'{\n  "property_id": 1,\n  "name": "Annual Service Contract",\n  "billing_type": "fixed",\n  "recurrence": "annually",\n  "status": "active"\n}', params:[] },
+
+  { group:'Service Quotes', method:'GET', path:'/service-quotes', label:'List Quotes', body:'', params:[{k:'status',v:'',req:false}] },
+  { group:'Service Quotes', method:'POST', path:'/service-quotes', label:'Create Quote',
+    body:'{\n  "property_id": 1,\n  "client_id": 1,\n  "is_defect_quote": false,\n  "description": "Fire equipment replacement",\n  "status": "draft"\n}', params:[] },
+
+  { group:'Reports', method:'GET', path:'/reports/time', label:'Time Report',
+    desc:'Paginated time session report with summary totals.',
+    body:'', params:[{k:'from_date',v:'2024-01-01',req:false},{k:'to_date',v:'2024-12-31',req:false},{k:'technician_id',v:'',req:false},{k:'task_type',v:'',req:false},{k:'per_page',v:'50',req:false}] },
+  { group:'Reports', method:'GET', path:'/reports/time/export', label:'Export CSV',
+    desc:'Downloads CSV. Opens in new tab — use with token in URL param or copy link.',
+    body:'', params:[{k:'from_date',v:'',req:false},{k:'to_date',v:'',req:false}] },
+
+  { group:'Uploads', method:'POST', path:'/uploads', label:'Upload File',
+    desc:'multipart/form-data. Use a REST client like Postman for file uploads (FormData).',
+    body:'', params:[] },
+];
+
+let currentTab = 'body';
+
+function buildNav() {
+  const groups = {};
+  ENDPOINTS.forEach((ep, i) => {
+    if (!groups[ep.group]) groups[ep.group] = [];
+    groups[ep.group].push({ ...ep, idx: i });
+  });
+  const nav = document.getElementById('nav');
+  Object.entries(groups).forEach(([g, eps]) => {
+    const div = document.createElement('div');
+    div.className = 'nav-group';
+    div.innerHTML = `<div class="nav-group-label">${g}</div>`;
+    eps.forEach(ep => {
+      const item = document.createElement('div');
+      item.className = 'nav-item';
+      item.dataset.idx = ep.idx;
+      item.innerHTML = `<span class="method-badge ${ep.method}">${ep.method}</span>${ep.label}`;
+      item.onclick = () => loadEndpoint(ep.idx, item);
+      div.appendChild(item);
+    });
+    nav.appendChild(div);
+  });
+}
+
+function loadEndpoint(idx, el) {
+  document.querySelectorAll('.nav-item').forEach(i => i.classList.remove('active'));
+  if (el) el.classList.add('active');
+  const ep = ENDPOINTS[idx];
+  document.getElementById('method-sel').value = ep.method;
+  document.getElementById('url-input').value = BASE + ep.path;
+  document.getElementById('req-body').value = ep.body || '';
+
+  const desc = document.getElementById('desc-panel');
+  if (ep.desc) { desc.innerHTML = ep.desc; desc.classList.remove('desc-none'); }
+  else desc.classList.add('desc-none');
+
+  buildParams(ep.params || []);
+  switchTab('body');
+  applyMethodColor();
+}
+
+function buildParams(params) {
+  const tbody = document.getElementById('params-body');
+  tbody.innerHTML = '';
+  params.forEach(p => {
+    const tr = document.createElement('tr');
+    tr.innerHTML = `
+      <td><span class="param-name">${p.k}</span></td>
+      <td><input type="text" value="${p.v}" data-key="${p.k}" class="param-val" /></td>
+      <td><span class="${p.req ? 'param-req' : 'param-opt'}">${p.req ? 'required' : 'optional'}</span></td>`;
+    tbody.appendChild(tr);
+  });
+}
+
+function switchTab(tab) {
+  currentTab = tab;
+  ['body','params','headers'].forEach(t => {
+    document.getElementById('tab-' + t).style.display = t === tab ? 'flex' : 'none';
+    if (t === tab) document.getElementById('tab-' + t).style.display = 'block';
+  });
+  document.querySelectorAll('.tab-btn').forEach(b => {
+    b.classList.toggle('active', b.textContent.toLowerCase().startsWith(tab));
+  });
+}
+
+function applyMethodColor() {
+  const m = document.getElementById('method-sel').value;
+  const colors = { GET:'#064e3b', POST:'#1e3a5f', PUT:'#451a03', PATCH:'#451a03', DELETE:'#450a0a' };
+  document.getElementById('method-sel').style.background = colors[m] || '#1a1d27';
+}
+document.getElementById('method-sel').addEventListener('change', applyMethodColor);
+
+function getToken() {
+  return document.getElementById('token-input').value.trim();
+}
+
+document.getElementById('token-input').addEventListener('input', function() {
+  const has = this.value.trim().length > 10;
+  document.getElementById('token-dot').classList.toggle('active', has);
+  document.getElementById('token-label').textContent = has ? 'Token set — protected routes ready' : 'No token — login first';
+  document.getElementById('token-label').style.color = has ? '#22c55e' : '#64748b';
+});
+
+async function sendRequest() {
+  const btn = document.getElementById('send-btn');
+  btn.textContent = 'Sending…'; btn.classList.add('loading');
+
+  const method = document.getElementById('method-sel').value;
+  let url = document.getElementById('url-input').value;
+
+  const paramRows = document.querySelectorAll('.param-val');
+  const qs = [];
+  paramRows.forEach(inp => {
+    if (inp.value.trim()) qs.push(encodeURIComponent(inp.dataset.key) + '=' + encodeURIComponent(inp.value.trim()));
+  });
+  if (qs.length && (method === 'GET' || method === 'DELETE')) {
+    url += (url.includes('?') ? '&' : '?') + qs.join('&');
+  }
+
+  const headers = { 'Content-Type': 'application/json', 'Accept': 'application/json' };
+  const token = getToken();
+  if (token) headers['Authorization'] = 'Bearer ' + token;
+
+  const headerRows = document.querySelectorAll('#headers-body input');
+  const headerKeys = document.querySelectorAll('#headers-body .param-name');
+  headerRows.forEach((inp, i) => {
+    if (inp.value.trim() && headerKeys[i]) headers[headerKeys[i].textContent] = inp.value.trim();
+  });
+
+  const body = document.getElementById('req-body').value.trim();
+  const opts = { method, headers };
+  if (['POST','PUT','PATCH'].includes(method) && body) opts.body = body;
+
+  const t0 = Date.now();
+  try {
+    const res = await fetch(url, opts);
+    const elapsed = Date.now() - t0;
+    const text = await res.text();
+    let pretty;
+    try { pretty = syntaxHighlight(JSON.stringify(JSON.parse(text), null, 2)); }
+    catch { pretty = escapeHtml(text); }
+
+    document.getElementById('response-area').innerHTML = pretty;
+    document.getElementById('resp-status').innerHTML =
+      `<span class="${res.ok ? 'status-ok' : 'status-err'}">${res.status} ${res.statusText}</span>`;
+    document.getElementById('resp-time').textContent = elapsed + 'ms';
+
+    // Auto-save token from login response
+    try {
+      const json = JSON.parse(text);
+      if (json.token) {
+        document.getElementById('token-input').value = json.token;
+        document.getElementById('token-input').dispatchEvent(new Event('input'));
+      }
+    } catch {}
+  } catch (e) {
+    document.getElementById('response-area').textContent = 'Error: ' + e.message + '\n\nMake sure the Laravel server is running on localhost:8000';
+    document.getElementById('resp-status').innerHTML = '<span class="status-err">Network Error</span>';
+  }
+
+  btn.textContent = 'Send'; btn.classList.remove('loading');
+}
+
+function syntaxHighlight(json) {
+  return escapeHtml(json).replace(
+    /("(\\u[a-zA-Z0-9]{4}|\\[^u]|[^\\"])*"(\s*:)?|\b(true|false|null)\b|-?\d+(?:\.\d*)?(?:[eE][+\-]?\d+)?)/g,
+    m => {
+      if (/^"/.test(m)) {
+        if (/:$/.test(m)) return '<span class="json-key">' + m + '</span>';
+        return '<span class="json-str">' + m + '</span>';
+      }
+      if (/true|false/.test(m)) return '<span class="json-bool">' + m + '</span>';
+      if (/null/.test(m)) return '<span class="json-null">' + m + '</span>';
+      return '<span class="json-num">' + m + '</span>';
+    }
+  );
+}
+
+function escapeHtml(s) {
+  return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+
+function copyResponse() {
+  const text = document.getElementById('response-area').innerText;
+  navigator.clipboard.writeText(text).catch(() => {});
+}
+
+document.addEventListener('keydown', e => {
+  if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') sendRequest();
+});
+
+buildNav();
+loadEndpoint(0);
+</script>
+</body>
+</html>
