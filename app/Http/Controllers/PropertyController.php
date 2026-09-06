@@ -48,6 +48,15 @@ class PropertyController extends Controller
         return response()->json(PropertyResource::make($property->fresh('client')));
     }
 
+    public function patchNote(Request $request, Property $property): JsonResponse
+    {
+        $data = $request->validate([
+            'property_note' => ['nullable', 'string', 'max:5000'],
+        ]);
+        $property->update($data);
+        return response()->json(PropertyResource::make($property->fresh('client')));
+    }
+
     public function destroy(Property $property): JsonResponse
     {
         $property->delete();

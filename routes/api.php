@@ -18,6 +18,7 @@ use App\Http\Controllers\SettingController;
 use App\Http\Controllers\TechnicianController;
 use App\Http\Controllers\TimeSessionController;
 use App\Http\Controllers\UploadController;
+use App\Http\Controllers\RoleController;
 use App\Http\Controllers\UserController;
 use Illuminate\Support\Facades\Route;
 
@@ -44,6 +45,7 @@ Route::prefix('v1')->group(function () {
         // Properties
         Route::middleware('permission:property.view')->group(function () {
             Route::apiResource('properties', PropertyController::class);
+            Route::patch('properties/{property}/note', [PropertyController::class, 'patchNote']);
             Route::get('properties/{property}/assets', [PropertyController::class, 'assets']);
             Route::get('properties/{property}/routines', [PropertyController::class, 'routines']);
             Route::get('properties/{property}/tasks', [PropertyController::class, 'tasks']);
@@ -62,6 +64,7 @@ Route::prefix('v1')->group(function () {
         });
 
         Route::apiResource('asset-types', AssetTypeController::class);
+        Route::post('asset-types/{assetType}/variants', [AssetTypeController::class, 'storeVariant']);
         Route::post('asset-types/{assetType}/failing-remarks', [AssetTypeController::class, 'storeFailingRemark']);
         Route::put('asset-types/{assetType}/failing-remarks/{remark}', [AssetTypeController::class, 'updateFailingRemark']);
         Route::delete('asset-types/{assetType}/failing-remarks/{remark}', [AssetTypeController::class, 'destroyFailingRemark']);
@@ -136,6 +139,10 @@ Route::prefix('v1')->group(function () {
         Route::get('reports/{report}', [ReportController::class, 'show']);
         Route::post('reports/{report}/send-email', [ReportController::class, 'sendEmail']);
         Route::post('reports/test-smtp', [ReportController::class, 'testSmtp']);
+
+        // Roles
+        Route::get('roles/permissions', [RoleController::class, 'permissions']);
+        Route::apiResource('roles', RoleController::class);
 
         // Settings
         Route::apiResource('settings', SettingController::class)->except(['show']);

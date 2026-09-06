@@ -12,7 +12,15 @@ class TechnicianController extends Controller
 {
     public function index(Request $request): JsonResponse
     {
-        $technicians = Technician::query()
+        $user = auth()->user();
+        $query = Technician::query();
+
+        // If user has technician.self but NOT technician.view, restrict to own record only
+        if ($user->hasPermission('technician.self') && !$user->hasPermission('technician.view')) {
+            $query->where('user_id', $user->id);
+        }
+
+        $technicians = $query
             ->when($request->status, fn ($q) => $q->where('status', $request->status))
             ->when($request->input("search"), fn ($q) => $q->where('full_name', 'like', "%{$request->input("search")}%"))
             ->orderBy('full_name')

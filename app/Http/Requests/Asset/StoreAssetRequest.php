@@ -33,6 +33,7 @@ class StoreAssetRequest extends FormRequest
             'is_not_on_occupancy_permit' => ['nullable', 'boolean'],
             'is_silent'             => ['nullable', 'boolean'],
             'is_active'             => ['nullable', 'boolean'],
+            'extra_fields'          => ['nullable', 'array'],
         ];
     }
 }

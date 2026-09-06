@@ -38,6 +38,7 @@ class AssetResource extends JsonResource
             'is_not_on_occupancy_permit' => $this->is_not_on_occupancy_permit,
             'is_silent'                  => $this->is_silent,
             'is_active'                  => $this->is_active,
+            'extra_fields'               => $this->extra_fields ?? [],
             'created_at'                 => $this->created_at,
             'updated_at'                 => $this->updated_at,
         ];

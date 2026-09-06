@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Setting;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
@@ -27,7 +28,7 @@ class UploadController extends Controller
 
         // Normalise to array so we handle both single and multiple uploads
         $files  = is_array($incoming) ? $incoming : [$incoming];
-        $folder = $request->input('folder', 'uploads');
+        $folder = $request->input('folder', 'uploads/' . now()->year);
         $urls   = [];
         $paths  = [];
 
@@ -45,7 +46,7 @@ class UploadController extends Controller
             }
 
             $ext      = $file->getClientOriginalExtension() ?: 'jpg';
-            $filename = Str::uuid() . '.' . $ext;
+            $filename = $this->buildFilename($request, $ext);
             $disk     = config('filesystems.default', 'public');
 
             try {
@@ -63,11 +64,30 @@ class UploadController extends Controller
         }
 
         return response()->json([
-            'urls'  => $urls,
-            'paths' => $paths,
-            // convenience single-value aliases kept for backwards compat
-            'url'  => $urls[0]  ?? null,
-            'path'  => $paths[0] ?? null,
+            'images' => $urls,
+            'urls'   => $urls,
+            'paths'  => $paths,
+            'url'    => $urls[0] ?? null,
+            'path'   => $paths[0] ?? null,
         ], 201);
+    }
+
+    private function buildFilename(Request $request, string $ext): string
+    {
+        $company = Setting::where('group', 'report_settings')->where('key', 'name')->value('value');
+        $company = $company ? Str::slug($company) : 'upload';
+
+        $parts = [$company];
+
+        if ($pid = $request->input('property_id')) {
+            $parts[] = 'P' . $pid;
+        }
+        if ($tid = $request->input('task_id')) {
+            $parts[] = 'T' . $tid;
+        }
+
+        $parts[] = Str::uuid();
+
+        return implode('-', $parts) . '.' . $ext;
     }
 }

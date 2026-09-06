@@ -43,6 +43,7 @@ class TaskController extends Controller
                 'label'           => $request->label,
                 'technician_note' => $request->technician_note,
                 'invoice_note'    => $request->invoice_note,
+                'internal_note'   => $request->internal_note,
                 'status'          => 'ready',
             ]);
 
@@ -85,7 +86,14 @@ class TaskController extends Controller
 
     public function update(UpdateTaskRequest $request, Task $task): JsonResponse
     {
-        $task->update($request->validated());
+        $data = $request->validated();
+
+        // Technicians cannot set internal_note
+        if (auth()->user()->role === 'technician') {
+            unset($data['internal_note']);
+        }
+
+        $task->update($data);
 
         if ($request->has('routine_ids')) {
             $task->routines()->sync($request->routine_ids);

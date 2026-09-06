@@ -22,6 +22,7 @@ class PropertyResource extends JsonResource
             'access_procedure'  => $this->access_procedure,
             'access_code'       => $this->access_code,
             'access_note'       => $this->access_note,
+            'property_note'     => $this->property_note,
             'status'            => $this->status,
             'safety_policy'     => $this->safety_policy ?? [],
             'created_at'        => $this->created_at,

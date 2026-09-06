@@ -18,7 +18,7 @@ class Asset extends Model
         'make', 'size', 'model', 'quantity', 'base_date', 'installation_date',
         'internal_notes', 'tags', 'contractor', 'location',
         'standard_of_maintenance', 'standard_of_installation', 'standard_of_performance',
-        'is_not_on_occupancy_permit', 'is_silent', 'is_active',
+        'is_not_on_occupancy_permit', 'is_silent', 'is_active', 'extra_fields',
     ];
 
     protected $casts = [
@@ -28,6 +28,7 @@ class Asset extends Model
         'is_not_on_occupancy_permit' => 'boolean',
         'is_silent'                  => 'boolean',
         'is_active'                  => 'boolean',
+        'extra_fields'               => 'array',
     ];
 
     public function property(): BelongsTo        { return $this->belongsTo(Property::class); }

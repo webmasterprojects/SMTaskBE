@@ -12,9 +12,9 @@ class AssetType extends Model
 {
     use HasFactory, SoftDeletes;
 
-    protected $fillable = ['created_by', 'name', 'is_active', 'tags', 'category', 'sub_category', 'classification', 'default_frequency'];
+    protected $fillable = ['created_by', 'name', 'is_active', 'tags', 'category', 'sub_category', 'classification', 'default_frequency', 'default_fields'];
 
-    protected $casts = ['is_active' => 'boolean', 'tags' => 'array', 'default_frequency' => 'array'];
+    protected $casts = ['is_active' => 'boolean', 'tags' => 'array', 'default_frequency' => 'array', 'default_fields' => 'array'];
 
     public function createdBy(): BelongsTo  { return $this->belongsTo(User::class, 'created_by'); }
     public function variants(): HasMany     { return $this->hasMany(AssetTypeVariant::class); }

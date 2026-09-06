@@ -30,6 +30,7 @@ class UserController extends Controller
             'email'        => ['required', 'email', 'unique:users,email'],
             'password'     => ['required', 'string', 'min:8'],
             'role'         => ['nullable', Rule::in(['admin', 'user'])],
+            'role_id'      => ['nullable', 'integer', 'exists:roles,id'],
             'status'       => ['nullable', Rule::in(['active', 'inactive', 'suspended'])],
             'phone_number' => ['nullable', 'string', 'max:50'],
             'permissions'  => ['nullable', 'array'],
@@ -37,12 +38,12 @@ class UserController extends Controller
 
         $user = User::create($data);
 
-        return response()->json(UserResource::make($user), 201);
+        return response()->json(UserResource::make($user->load('linkedRole')), 201);
     }
 
     public function show(User $user): JsonResponse
     {
-        return response()->json(UserResource::make($user->load('technician')));
+        return response()->json(UserResource::make($user->load('technician', 'linkedRole')));
     }
 
     public function update(Request $request, User $user): JsonResponse
@@ -51,6 +52,7 @@ class UserController extends Controller
             'name'         => ['nullable', 'string', 'max:255'],
             'email'        => ['nullable', 'email', Rule::unique('users', 'email')->ignore($user->id)],
             'role'         => ['nullable', Rule::in(['admin', 'user'])],
+            'role_id'      => ['nullable', 'integer', 'exists:roles,id'],
             'status'       => ['nullable', Rule::in(['active', 'inactive', 'suspended'])],
             'phone_number' => ['nullable', 'string', 'max:50'],
             'permissions'  => ['nullable', 'array'],
@@ -58,7 +60,7 @@ class UserController extends Controller
 
         $user->update($data);
 
-        return response()->json(UserResource::make($user->fresh()));
+        return response()->json(UserResource::make($user->fresh()->load('linkedRole')));
     }
 
     public function destroy(User $user): JsonResponse

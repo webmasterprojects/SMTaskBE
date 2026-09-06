@@ -29,7 +29,7 @@ class SettingController extends Controller
     public function store(Request $request): JsonResponse
     {
         $data = $request->validate([
-            'group'      => ['required', 'string', 'in:section,sub_section,severity,remark_template,resolution_template,service_repair_note,task_status,report_settings,smtp_settings'],
+            'group'      => ['required', 'string', 'in:section,sub_section,severity,remark_template,resolution_template,service_repair_note,task_status,report_settings,smtp_settings,map_settings'],
             'key'        => ['nullable', 'string'],
             'value'      => ['required', 'string'],
             'meta'       => ['nullable', 'array'],

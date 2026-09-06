@@ -49,7 +49,7 @@ class AuthController extends Controller
 
     public function me(Request $request): JsonResponse
     {
-        return response()->json(UserResource::make($request->user()->load('technician')));
+        return response()->json(UserResource::make($request->user()->load('technician', 'linkedRole')));
     }
 
     public function refresh(Request $request): JsonResponse

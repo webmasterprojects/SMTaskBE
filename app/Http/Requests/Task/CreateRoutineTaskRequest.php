@@ -17,6 +17,7 @@ class CreateRoutineTaskRequest extends FormRequest
             'label'           => ['nullable', 'string', 'max:255'],
             'technician_note' => ['nullable', 'string', 'max:2000'],
             'invoice_note'    => ['nullable', 'string', 'max:2000'],
+            'internal_note'   => ['nullable', 'string', 'max:5000'],
         ];
     }
 }

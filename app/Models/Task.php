@@ -16,7 +16,7 @@ class Task extends Model
 
     protected $fillable = [
         'property_id', 'created_by', 'type', 'label',
-        'tags', 'technician_note', 'invoice_note', 'logbook', 'status',
+        'tags', 'technician_note', 'invoice_note', 'logbook', 'status', 'internal_note',
     ];
 
     protected $casts = [

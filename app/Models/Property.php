@@ -15,7 +15,7 @@ class Property extends Model
     protected $fillable = [
         'client_id', 'created_by', 'name', 'formatted_address',
         'latitude', 'longitude', 'place_id', 'access_schedule',
-        'access_procedure', 'access_code', 'access_note', 'status',
+        'access_procedure', 'access_code', 'access_note', 'property_note', 'status',
         'safety_policy',
     ];
 

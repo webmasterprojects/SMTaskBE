@@ -22,6 +22,7 @@ class StorePropertyRequest extends FormRequest
             'access_procedure'  => ['nullable', 'string', 'max:2000'],
             'access_code'       => ['nullable', 'string', 'max:100'],
             'access_note'       => ['nullable', 'string', 'max:2000'],
+            'property_note'     => ['nullable', 'string', 'max:5000'],
             'status'                        => ['nullable', Rule::in(['draft', 'active', 'inactive'])],
             'safety_policy'                 => ['nullable', 'array'],
             'safety_policy.*.question'      => ['required_with:safety_policy', 'string', 'max:500'],

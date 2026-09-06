@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Http\Resources\AssetTypeResource;
 use App\Models\AssetType;
 use App\Models\AssetTypeFailingRemark;
+use App\Models\AssetTypeVariant;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 
@@ -32,6 +33,8 @@ class AssetTypeController extends Controller
             'classification'    => ['nullable', 'string', 'max:255'],
             'default_frequency'   => ['nullable', 'array'],
             'default_frequency.*' => ['string', 'in:MONTHLY,QUARTERLY,SIX-MONTHLY,ANNUALLY,TWO-YEARLY,FIVE-YEARLY'],
+            'default_fields'      => ['nullable', 'array'],
+            'default_fields.*'    => ['string'],
             'variants'         => ['nullable', 'array'],
             'variants.*.name'  => ['required', 'string', 'max:255'],
             'variants.*.price' => ['nullable', 'numeric', 'min:0'],
@@ -45,6 +48,7 @@ class AssetTypeController extends Controller
             'sub_category'      => $data['sub_category'] ?? null,
             'classification'    => $data['classification'] ?? null,
             'default_frequency' => $data['default_frequency'] ?? null,
+            'default_fields'    => $data['default_fields'] ?? null,
             'created_by'        => auth()->id(),
         ]);
 
@@ -58,6 +62,24 @@ class AssetTypeController extends Controller
     public function show(AssetType $assetType): JsonResponse
     {
         return response()->json(AssetTypeResource::make($assetType->load(['variants', 'failingRemarks'])));
+    }
+
+    public function storeVariant(Request $request, AssetType $assetType): JsonResponse
+    {
+        $data = $request->validate([
+            'name'  => ['required', 'string', 'max:255'],
+            'price' => ['nullable', 'numeric', 'min:0'],
+        ]);
+        $variant = $assetType->variants()->create([
+            'name'  => $data['name'],
+            'price' => $data['price'] ?? 0,
+        ]);
+        return response()->json([
+            'id'    => $variant->id,
+            'uid'   => (string) $variant->id,
+            'name'  => $variant->name,
+            'price' => $variant->price,
+        ], 201);
     }
 
     public function storeFailingRemark(Request $request, AssetType $assetType): JsonResponse
@@ -103,6 +125,8 @@ class AssetTypeController extends Controller
             'classification'    => ['nullable', 'string', 'max:255'],
             'default_frequency'   => ['nullable', 'array'],
             'default_frequency.*' => ['string', 'in:MONTHLY,QUARTERLY,SIX-MONTHLY,ANNUALLY,TWO-YEARLY,FIVE-YEARLY'],
+            'default_fields'      => ['nullable', 'array'],
+            'default_fields.*'    => ['string'],
             'variants'       => ['nullable', 'array'],
             'variants.*.name'  => ['required_with:variants', 'string', 'max:255'],
             'variants.*.price' => ['nullable', 'numeric', 'min:0'],
@@ -116,6 +140,7 @@ class AssetTypeController extends Controller
             'sub_category'      => $data['sub_category']      ?? $assetType->sub_category,
             'classification'    => $data['classification']    ?? $assetType->classification,
             'default_frequency' => array_key_exists('default_frequency', $data) ? $data['default_frequency'] : $assetType->default_frequency,
+            'default_fields'    => array_key_exists('default_fields', $data) ? $data['default_fields'] : $assetType->default_fields,
         ]);
 
         // Sync variants: delete existing, recreate from request

@@ -14,6 +14,7 @@ class UpdateTaskRequest extends FormRequest
     {
         return [
             'label'           => ['nullable', 'string', 'max:255'],
+            'internal_note'   => ['nullable', 'string', 'max:5000'],
             'tags'            => ['nullable', 'array'],
             'technician_note' => ['nullable', 'string', 'max:2000'],
             'invoice_note'    => ['nullable', 'string', 'max:2000'],

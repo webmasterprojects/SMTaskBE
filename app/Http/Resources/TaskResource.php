@@ -15,6 +15,7 @@ class TaskResource extends JsonResource
             'property'        => $this->whenLoaded('property', fn () => PropertyResource::make($this->property)),
             'type'            => $this->type,
             'label'           => $this->label,
+            'internal_note'   => $this->internal_note,
             'tags'            => $this->tags ?? [],
             'technician_note' => $this->technician_note,
             'invoice_note'    => $this->invoice_note,

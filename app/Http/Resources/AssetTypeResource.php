@@ -18,6 +18,7 @@ class AssetTypeResource extends JsonResource
             'sub_category'   => $this->sub_category,
             'classification'     => $this->classification,
             'default_frequency'  => $this->default_frequency,
+            'default_fields'     => $this->default_fields ?? [],
             'variants'        => $this->whenLoaded('variants', fn () => AssetTypeVariantResource::collection($this->variants)),
             'failing_remarks' => $this->whenLoaded('failingRemarks', fn () => $this->failingRemarks->map(fn ($r) => [
                 'id'         => $r->id,
