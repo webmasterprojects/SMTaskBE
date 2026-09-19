@@ -22,6 +22,7 @@ use App\Http\Controllers\PropertyDocumentController;
 use App\Http\Controllers\TaskAttachmentController;
 use App\Http\Controllers\UploadController;
 use App\Http\Controllers\RoleController;
+use App\Http\Controllers\ScheduleController;
 use App\Http\Controllers\UserController;
 use Illuminate\Support\Facades\Route;
 
@@ -138,6 +139,9 @@ Route::prefix('v1')->group(function () {
         Route::get('logbook/names', [LogbookController::class, 'names']);
         Route::get('logbook/{entry}/download', [LogbookController::class, 'download'])->name('logbook.download');
         Route::delete('logbook/{entry}', [LogbookController::class, 'destroy']);
+
+        // Schedule
+        Route::get('schedule', [ScheduleController::class, 'index']);
 
         // Reports
         Route::middleware('permission:report.time.view')->group(function () {
