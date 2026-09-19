@@ -2,14 +2,15 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\Setting;
+use App\Http\Controllers\Concerns\BuildsUploadFilename;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
-use Illuminate\Support\Str;
 
 class UploadController extends Controller
 {
+    use BuildsUploadFilename;
+
     private const ALLOWED_MIME_TYPES = [
         'image/jpeg', 'image/png', 'image/gif', 'image/webp',
         'application/pdf',
@@ -46,7 +47,9 @@ class UploadController extends Controller
             }
 
             $ext      = $file->getClientOriginalExtension() ?: 'jpg';
-            $filename = $this->buildFilename($request, $ext);
+            $pid      = $request->input('property_id') ? (int) $request->input('property_id') : null;
+            $tid      = $request->input('task_id')     ? (int) $request->input('task_id')     : null;
+            $filename = $this->buildUploadFilename($ext, $pid, $tid);
             $disk     = config('filesystems.default', 'public');
 
             try {
@@ -72,22 +75,4 @@ class UploadController extends Controller
         ], 201);
     }
 
-    private function buildFilename(Request $request, string $ext): string
-    {
-        $company = Setting::where('group', 'report_settings')->where('key', 'name')->value('value');
-        $company = $company ? Str::slug($company) : 'upload';
-
-        $parts = [$company];
-
-        if ($pid = $request->input('property_id')) {
-            $parts[] = 'P' . $pid;
-        }
-        if ($tid = $request->input('task_id')) {
-            $parts[] = 'T' . $tid;
-        }
-
-        $parts[] = Str::uuid();
-
-        return implode('-', $parts) . '.' . $ext;
-    }
 }

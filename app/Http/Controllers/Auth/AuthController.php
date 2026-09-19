@@ -52,6 +52,26 @@ class AuthController extends Controller
         return response()->json(UserResource::make($request->user()->load('technician', 'linkedRole')));
     }
 
+    public function getPreferences(Request $request): JsonResponse
+    {
+        return response()->json($request->user()->preferences ?? (object)[]);
+    }
+
+    public function updatePreferences(Request $request): JsonResponse
+    {
+        $data = $request->validate([
+            'work_tab_fields'              => ['nullable', 'array'],
+            'work_tab_fields.*'            => ['array'],
+            'work_tab_fields.*.*'          => ['string'],
+        ]);
+
+        $user = $request->user();
+        $current = $user->preferences ?? [];
+        $user->update(['preferences' => array_merge($current, $data)]);
+
+        return response()->json($user->preferences);
+    }
+
     public function refresh(Request $request): JsonResponse
     {
         $user = $request->user();

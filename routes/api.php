@@ -17,6 +17,9 @@ use App\Http\Controllers\TaskController;
 use App\Http\Controllers\SettingController;
 use App\Http\Controllers\TechnicianController;
 use App\Http\Controllers\TimeSessionController;
+use App\Http\Controllers\LogbookController;
+use App\Http\Controllers\PropertyDocumentController;
+use App\Http\Controllers\TaskAttachmentController;
 use App\Http\Controllers\UploadController;
 use App\Http\Controllers\RoleController;
 use App\Http\Controllers\UserController;
@@ -26,6 +29,7 @@ Route::prefix('v1')->group(function () {
 
     // Public
     Route::post('/auth/login', [AuthController::class, 'login'])->middleware('throttle:login');
+    Route::get('/app', [SettingController::class, 'appPublic']);
 
     // Authenticated
     Route::middleware('auth:sanctum')->group(function () {
@@ -33,6 +37,8 @@ Route::prefix('v1')->group(function () {
         Route::post('/auth/logout', [AuthController::class, 'logout']);
         Route::post('/auth/refresh', [AuthController::class, 'refresh']);
         Route::get('/auth/me', [AuthController::class, 'me']);
+        Route::get('/auth/preferences', [AuthController::class, 'getPreferences']);
+        Route::patch('/auth/preferences', [AuthController::class, 'updatePreferences']);
 
         // Users (admin only)
         Route::middleware('permission:user.view')
@@ -92,6 +98,20 @@ Route::prefix('v1')->group(function () {
             Route::get('tasks/{task}/safety-acks', [TaskController::class, 'safetyAcks']);
             Route::post('tasks/{task}/safety-acks', [TaskController::class, 'storeSafetyAck']);
 
+            // Attachments
+            Route::get('tasks/{task}/attachments', [TaskAttachmentController::class, 'index']);
+            Route::post('tasks/{task}/attachments', [TaskAttachmentController::class, 'store']);
+            Route::delete('tasks/{task}/attachments/{attachment}', [TaskAttachmentController::class, 'destroy']);
+
+            // Logbook
+            Route::get('tasks/{task}/logbook', [LogbookController::class, 'taskIndex']);
+            Route::post('tasks/{task}/logbook', [LogbookController::class, 'store']);
+            Route::get('properties/{property}/logbook', [LogbookController::class, 'propertyIndex']);
+
+            // Property Documents
+            Route::get('properties/{property}/documents', [PropertyDocumentController::class, 'index']);
+            Route::post('properties/{property}/documents', [PropertyDocumentController::class, 'store']);
+
             // Current user's active session across all tasks
             Route::get('time-sessions/active', [TimeSessionController::class, 'myActive']);
 
@@ -103,6 +123,21 @@ Route::prefix('v1')->group(function () {
                 Route::delete('time-sessions/{session}', [TimeSessionController::class, 'destroy']);
             });
         });
+
+        // Property Documents
+        Route::get('property-documents/names', [PropertyDocumentController::class, 'names']);
+        Route::get('property-documents/{document}/download', [PropertyDocumentController::class, 'download'])->name('property-documents.download');
+        Route::delete('property-documents/{document}', [PropertyDocumentController::class, 'destroy']);
+
+        // Attachment download & name suggestions
+        Route::get('task-attachments/names', [TaskAttachmentController::class, 'names']);
+        Route::get('task-attachments/{attachment}/download', [TaskAttachmentController::class, 'download'])
+            ->name('task-attachments.download');
+
+        // Logbook download & name suggestions
+        Route::get('logbook/names', [LogbookController::class, 'names']);
+        Route::get('logbook/{entry}/download', [LogbookController::class, 'download'])->name('logbook.download');
+        Route::delete('logbook/{entry}', [LogbookController::class, 'destroy']);
 
         // Reports
         Route::middleware('permission:report.time.view')->group(function () {
@@ -148,6 +183,7 @@ Route::prefix('v1')->group(function () {
         Route::apiResource('settings', SettingController::class)->except(['show']);
         Route::get('settings/trashed', [SettingController::class, 'trashed']);
         Route::patch('settings/{id}/restore', [SettingController::class, 'restore']);
+        Route::patch('settings/{setting}/set-default', [SettingController::class, 'setDefault']);
 
         // File Upload
         Route::post('uploads', [UploadController::class, 'store']);

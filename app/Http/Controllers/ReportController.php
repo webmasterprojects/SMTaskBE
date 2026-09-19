@@ -280,10 +280,14 @@ class ReportController extends Controller
         $reportData = $report->data;
         $userMessage = $data['message'] ?? '';
 
-        Mail::mailer('smtp')->send([], [], function ($mail) use ($data, $reportData, $userMessage) {
+        $attachmentHtml = $this->buildReportAttachmentHtml($reportData);
+        $filename = 'Report-' . ($reportData['report_number'] ?? $report->id) . '.html';
+
+        Mail::mailer('smtp')->send([], [], function ($mail) use ($data, $reportData, $userMessage, $attachmentHtml, $filename) {
             $mail->to($data['to'])
                 ->subject($data['subject'])
-                ->html($this->buildEmailHtml($reportData, $userMessage));
+                ->html($this->buildEmailHtml($reportData, $userMessage))
+                ->attachData($attachmentHtml, $filename, ['mime' => 'text/html']);
         });
 
         return response()->json(['message' => 'Email sent successfully']);
@@ -331,6 +335,115 @@ class ReportController extends Controller
         return Setting::where('group', $group)->get()
             ->pluck('value', 'key')
             ->toArray();
+    }
+
+    private function buildReportAttachmentHtml(array $r): string
+    {
+        $rn       = htmlspecialchars($r['report_number'] ?? '');
+        $company  = htmlspecialchars($r['company']['name'] ?? 'Service Matrix');
+        $logo     = htmlspecialchars($r['company']['logo'] ?? '');
+        $prop     = htmlspecialchars($r['property']['name'] ?? '');
+        $address  = htmlspecialchars($r['property']['address'] ?? '');
+        $client   = htmlspecialchars($r['property']['client_name'] ?? '');
+        $strata   = htmlspecialchars($r['property']['strata_plan'] ?? '');
+        $issued   = htmlspecialchars($r['issued_date'] ?? '');
+        $issuedBy = htmlspecialchars($r['issued_by'] ?? '');
+        $performed = htmlspecialchars($r['performed_date'] ?? '');
+        $techs    = htmlspecialchars($r['technicians'] ?? '');
+
+        $style = '
+            body{font-family:Arial,sans-serif;font-size:13px;color:#222;margin:0;padding:0}
+            .header{background:#1e3a5f;color:#fff;padding:20px 30px;display:flex;align-items:center;gap:20px}
+            .header img{max-height:60px;max-width:160px;object-fit:contain}
+            .header h1{margin:0;font-size:20px}
+            .header p{margin:2px 0;font-size:12px;opacity:.85}
+            .section{padding:20px 30px;border-bottom:1px solid #e5e7eb}
+            .section h2{font-size:14px;color:#1e3a5f;text-transform:uppercase;letter-spacing:.5px;margin:0 0 12px}
+            table{width:100%;border-collapse:collapse;font-size:12px}
+            th{background:#f1f5f9;text-align:left;padding:7px 10px;font-size:11px;color:#475569;border:1px solid #e2e8f0}
+            td{padding:7px 10px;border:1px solid #e2e8f0;vertical-align:top}
+            .badge{display:inline-block;padding:2px 8px;border-radius:4px;font-size:11px;font-weight:600}
+            .pass{background:#dcfce7;color:#166534}
+            .fail{background:#fee2e2;color:#991b1b}
+            .no-test{background:#fef9c3;color:#854d0e}
+            .meta{display:flex;flex-wrap:wrap;gap:16px;font-size:12px;color:#374151}
+            .meta span{display:flex;flex-direction:column}
+            .meta strong{font-size:11px;color:#6b7280;font-weight:600;margin-bottom:2px}
+            .footer{background:#f8f9fa;padding:14px 30px;font-size:11px;color:#6c757d;text-align:center}
+            @media print{body{margin:0}@page{margin:15mm}}
+        ';
+
+        $logoTag = $logo ? "<img src='{$logo}' alt='logo'>" : '';
+
+        // Info section
+        $infoHtml = "<div class='meta'>
+            <span><strong>Property</strong>{$prop}</span>
+            <span><strong>Address</strong>{$address}</span>
+            <span><strong>Client</strong>{$client}</span>"
+            . ($strata ? "<span><strong>Strata Plan</strong>{$strata}</span>" : '') . "
+            <span><strong>Report No.</strong>{$rn}</span>
+            <span><strong>Issued Date</strong>{$issued}</span>
+            <span><strong>Issued By</strong>{$issuedBy}</span>
+            <span><strong>Performed Date</strong>{$performed}</span>
+            <span><strong>Technicians</strong>{$techs}</span>
+        </div>";
+
+        // Scope of works
+        $scopeRows = '';
+        foreach (($r['scope_of_works'] ?? []) as $s) {
+            $freq = implode(', ', (array)($s['frequency'] ?? []));
+            $scopeRows .= "<tr><td>" . htmlspecialchars($s['category'] ?? '') . "</td>"
+                . "<td>" . htmlspecialchars($s['standard'] ?? '') . "</td>"
+                . "<td>" . htmlspecialchars($freq) . "</td>"
+                . "<td>" . htmlspecialchars((string)($s['count'] ?? '')) . "</td></tr>";
+        }
+        $scopeTable = $scopeRows ? "<table><thead><tr><th>Category</th><th>Standard</th><th>Frequency</th><th>Qty</th></tr></thead><tbody>{$scopeRows}</tbody></table>" : '<p style="color:#6b7280">No scope recorded.</p>';
+
+        // Defect summary
+        $defectRows = '';
+        foreach (($r['defect_summary'] ?? []) as $d) {
+            $color = htmlspecialchars($d['color'] ?? '#6c757d');
+            $defectRows .= "<tr><td><span class='badge' style='background:{$color};color:#fff'>"
+                . htmlspecialchars($d['severity'] ?? '') . "</span></td>"
+                . "<td>" . htmlspecialchars((string)($d['count'] ?? 0)) . "</td></tr>";
+        }
+        $defectTable = $defectRows ? "<table><thead><tr><th>Severity</th><th>Count</th></tr></thead><tbody>{$defectRows}</tbody></table>" : '<p style="color:#6b7280">No defects recorded.</p>';
+
+        // Maintenance
+        $maintHtml = '';
+        foreach (($r['maintenance'] ?? []) as $cat) {
+            $catName = htmlspecialchars($cat['category'] ?? 'Unknown');
+            $maintHtml .= "<h3 style='font-size:13px;color:#1e3a5f;margin:16px 0 8px'>{$catName}</h3><table><thead><tr><th>Asset</th><th>Location</th><th>Status</th><th>Defects</th></tr></thead><tbody>";
+            foreach (($cat['assets'] ?? []) as $asset) {
+                $status = strtolower($asset['status'] ?? 'n/a');
+                $badgeClass = $status === 'pass' ? 'pass' : ($status === 'fail' ? 'fail' : 'no-test');
+                $defects = '';
+                foreach (($asset['defects'] ?? []) as $def) {
+                    $sev = htmlspecialchars($def['severity'] ?? '');
+                    $rem = htmlspecialchars($def['remarks'] ?? '');
+                    $res = $def['resolution'] ? ' <em>→ ' . htmlspecialchars($def['resolution']) . '</em>' : '';
+                    $sc  = htmlspecialchars($def['severity_color'] ?? '#6c757d');
+                    $st  = htmlspecialchars($def['severity_text'] ?? '#fff');
+                    $defects .= "<div style='margin-bottom:4px'><span class='badge' style='background:{$sc};color:{$st}'>{$sev}</span> {$rem}{$res}</div>";
+                }
+                $maintHtml .= "<tr>"
+                    . "<td>" . htmlspecialchars($asset['label'] ?? '') . "</td>"
+                    . "<td>" . htmlspecialchars($asset['location'] ?? '') . "</td>"
+                    . "<td><span class='badge {$badgeClass}'>" . strtoupper($asset['status'] ?? 'N/A') . "</span></td>"
+                    . "<td>" . ($defects ?: '<span style="color:#6b7280">None</span>') . "</td>"
+                    . "</tr>";
+            }
+            $maintHtml .= "</tbody></table>";
+        }
+
+        return "<!DOCTYPE html><html><head><meta charset='UTF-8'><title>Report {$rn}</title><style>{$style}</style></head><body>
+            <div class='header'>{$logoTag}<div><h1>{$company}</h1><p>Service Report — {$rn}</p></div></div>
+            <div class='section'>{$infoHtml}</div>
+            <div class='section'><h2>Scope of Works</h2>{$scopeTable}</div>
+            <div class='section'><h2>Defect Summary</h2>{$defectTable}</div>
+            <div class='section'><h2>Maintenance Details</h2>{$maintHtml}</div>
+            <div class='footer'>Generated by {$company} &mdash; {$rn} &mdash; {$issued}</div>
+        </body></html>";
     }
 
     private function buildEmailHtml(array $report, string $userMessage): string

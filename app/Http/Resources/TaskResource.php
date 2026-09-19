@@ -10,11 +10,17 @@ class TaskResource extends JsonResource
     public function toArray(Request $request): array
     {
         return [
-            'id'              => $this->id,
-            'property_id'     => $this->property_id,
-            'property'        => $this->whenLoaded('property', fn () => PropertyResource::make($this->property)),
-            'type'            => $this->type,
-            'label'           => $this->label,
+            'id'                   => $this->id,
+            'property_id'          => $this->property_id,
+            'property'             => $this->whenLoaded('property', fn () => PropertyResource::make($this->property)),
+            'type'                 => $this->type,
+            'label'                => $this->label,
+            'service_category_id'  => $this->service_category_id,
+            'service_category'     => $this->whenLoaded('serviceCategory', fn () => [
+                'id'    => $this->serviceCategory->id,
+                'name'  => $this->serviceCategory->value,
+                'is_default' => (bool) ($this->serviceCategory->meta['is_default'] ?? false),
+            ]),
             'internal_note'   => $this->internal_note,
             'tags'            => $this->tags ?? [],
             'technician_note' => $this->technician_note,

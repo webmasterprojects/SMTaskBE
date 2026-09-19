@@ -15,7 +15,7 @@ class User extends Authenticatable
     use HasApiTokens, HasFactory, Notifiable, SoftDeletes;
 
     protected $fillable = [
-        'name', 'email', 'password', 'role', 'role_id', 'status', 'phone_number', 'permissions',
+        'name', 'email', 'password', 'role', 'role_id', 'status', 'phone_number', 'permissions', 'preferences',
     ];
 
     protected $hidden = ['password', 'remember_token'];
@@ -23,6 +23,7 @@ class User extends Authenticatable
     protected $casts = [
         'email_verified_at' => 'datetime',
         'permissions'       => 'array',
+        'preferences'       => 'array',
         'password'          => 'hashed',
     ];
 

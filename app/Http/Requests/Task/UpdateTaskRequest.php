@@ -22,8 +22,9 @@ class UpdateTaskRequest extends FormRequest
             'status'          => ['nullable', 'string', Rule::in(Setting::where('group', 'task_status')->pluck('key')->toArray() ?: ['ready', 'scheduled', 'in_progress', 'on_hold', 'completed', 'cancelled', 'archived'])],
             'routine_ids'     => ['nullable', 'array'],
             'routine_ids.*'   => ['integer', 'exists:routines,id'],
-            'asset_ids'       => ['nullable', 'array'],
-            'asset_ids.*'     => ['integer', 'exists:assets,id'],
+            'asset_ids'            => ['nullable', 'array'],
+            'asset_ids.*'          => ['integer', 'exists:assets,id'],
+            'service_category_id'  => ['nullable', 'integer', 'exists:settings,id'],
         ];
     }
 }

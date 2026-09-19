@@ -33,4 +33,5 @@ class Property extends Model
     public function contracts(): HasMany   { return $this->hasMany(Contract::class); }
     public function billings(): HasMany    { return $this->hasMany(Billing::class); }
     public function contacts(): HasMany    { return $this->hasMany(PropertyContact::class); }
+    public function documents(): HasMany   { return $this->hasMany(PropertyDocument::class); }
 }

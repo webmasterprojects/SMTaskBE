@@ -18,7 +18,7 @@ class TaskController extends Controller
     public function index(Request $request): JsonResponse
     {
         $tasks = Task::query()
-            ->with(['property', 'routines.asset', 'assets', 'appointments.technicians'])
+            ->with(['property', 'routines.asset', 'assets', 'appointments.technicians', 'serviceCategory'])
             ->when($request->property_id, fn ($q) => $q->where('property_id', $request->property_id))
             ->when($request->type, fn ($q) => $q->where('type', $request->type))
             ->when($request->status, fn ($q) => $q->whereIn('status', array_filter(explode(',', $request->status))))
@@ -37,14 +37,15 @@ class TaskController extends Controller
     {
         $task = DB::transaction(function () use ($request) {
             $task = Task::create([
-                'property_id'     => $request->property_id,
-                'created_by'      => auth()->id(),
-                'type'            => 'routine',
-                'label'           => $request->label,
-                'technician_note' => $request->technician_note,
-                'invoice_note'    => $request->invoice_note,
-                'internal_note'   => $request->internal_note,
-                'status'          => 'ready',
+                'property_id'         => $request->property_id,
+                'created_by'          => auth()->id(),
+                'type'                => 'routine',
+                'label'               => $request->label,
+                'technician_note'     => $request->technician_note,
+                'invoice_note'        => $request->invoice_note,
+                'internal_note'       => $request->internal_note,
+                'service_category_id' => $request->service_category_id,
+                'status'              => 'ready',
             ]);
 
             if (!empty($request->routine_ids)) {
@@ -60,7 +61,7 @@ class TaskController extends Controller
     public function show(Task $task): JsonResponse
     {
         return response()->json(TaskResource::make(
-            $task->load(['property', 'routines.asset', 'assets', 'appointments.technicians'])
+            $task->load(['property', 'routines.asset', 'assets', 'appointments.technicians', 'serviceCategory'])
         ));
     }
 
@@ -103,7 +104,7 @@ class TaskController extends Controller
             $task->assets()->sync($request->asset_ids);
         }
 
-        return response()->json(TaskResource::make($task->fresh(['routines', 'assets', 'appointments'])));
+        return response()->json(TaskResource::make($task->fresh(['routines', 'assets', 'appointments', 'serviceCategory'])));
     }
 
     public function destroy(Task $task): JsonResponse

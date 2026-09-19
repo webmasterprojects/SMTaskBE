@@ -9,6 +9,20 @@ use Illuminate\Http\Request;
 
 class SettingController extends Controller
 {
+    public function appPublic(): JsonResponse
+    {
+        $get = fn (string $key) => Setting::where('group', 'report_settings')
+            ->where('key', $key)
+            ->whereNull('deleted_at')
+            ->latest('id')
+            ->value('value');
+
+        return response()->json([
+            'name' => $get('name'),
+            'logo' => $get('logo'),
+        ]);
+    }
+
     public function index(Request $request): JsonResponse
     {
         $query = Setting::orderBy('sort_order')->orderBy('id');
@@ -29,7 +43,7 @@ class SettingController extends Controller
     public function store(Request $request): JsonResponse
     {
         $data = $request->validate([
-            'group'      => ['required', 'string', 'in:section,sub_section,severity,remark_template,resolution_template,service_repair_note,task_status,report_settings,smtp_settings,map_settings'],
+            'group'      => ['required', 'string', 'in:section,sub_section,severity,remark_template,resolution_template,service_repair_note,task_status,report_settings,smtp_settings,map_settings,service_category'],
             'key'        => ['nullable', 'string'],
             'value'      => ['required', 'string'],
             'meta'       => ['nullable', 'array'],
@@ -65,6 +79,22 @@ class SettingController extends Controller
         }
         $setting->delete();
         return response()->json(['message' => 'Deleted']);
+    }
+
+    public function setDefault(Setting $setting): JsonResponse
+    {
+        // Clear default on all in same group
+        Setting::where('group', $setting->group)->each(function ($s) {
+            $meta = $s->meta ?? [];
+            $meta['is_default'] = false;
+            $s->update(['meta' => $meta]);
+        });
+        // Set this one as default
+        $meta = $setting->meta ?? [];
+        $meta['is_default'] = true;
+        $setting->update(['meta' => $meta]);
+
+        return response()->json($setting->fresh());
     }
 
     public function trashed(Request $request): JsonResponse
