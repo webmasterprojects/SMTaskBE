@@ -26,7 +26,20 @@ class TaskController extends Controller
                 ->where('created_by', $request->technician_id)
                 ->orWhereHas('appointments.technicians', fn ($q3) => $q3->where('users.id', $request->technician_id))
             ))
-            ->when($request->input("search"), fn ($q) => $q->where('label', 'like', "%{$request->input("search")}%"))
+            ->when($request->input("search"), function ($q) use ($request) {
+                $s = "%{$request->input('search')}%";
+                $q->where(function ($q2) use ($s) {
+                    $q2->where('label', 'like', $s)
+                       ->orWhereRaw('CAST(id AS CHAR) LIKE ?', [$s])
+                       ->orWhereRaw('CAST(property_id AS CHAR) LIKE ?', [$s])
+                       ->orWhereHas('property', fn ($p) => $p->where('name', 'like', $s)
+                           ->orWhere('formatted_address', 'like', $s))
+                       ->orWhereHas('property.client', fn ($c) => $c->where('name', 'like', $s))
+                       ->orWhereHas('serviceCategory', fn ($sc) => $sc->where('value', 'like', $s))
+                       ->orWhereHas('appointments.technicians', fn ($u) => $u->where('full_name', 'like', $s)
+                           ->orWhere('email', 'like', $s));
+                });
+            })
             ->orderBy($request->sort_by ?? 'created_at', $request->sort_dir ?? 'desc')
             ->paginate($request->per_page ?? $request->limit ?? 15);
 
