@@ -7,6 +7,7 @@ use App\Http\Requests\Task\CreateRoutineTaskRequest;
 use App\Http\Requests\Task\UpdateTaskRequest;
 use App\Http\Resources\TaskResource;
 use App\Models\Asset;
+use App\Models\Setting;
 use App\Models\Task;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -57,7 +58,8 @@ class TaskController extends Controller
                 'technician_note'     => $request->technician_note,
                 'invoice_note'        => $request->invoice_note,
                 'internal_note'       => $request->internal_note,
-                'service_category_id' => $request->service_category_id,
+                'service_category_id' => $request->service_category_id
+                    ?? Setting::where('group', 'service_category')->whereJsonContains('meta->is_default', true)->value('id'),
                 'status'              => 'ready',
             ]);
 
@@ -84,10 +86,12 @@ class TaskController extends Controller
             $task = Task::create([
                 'property_id'     => $request->property_id,
                 'created_by'      => auth()->id(),
-                'type'            => 'on_demand',
-                'label'           => $request->label,
-                'technician_note' => $request->technician_note,
-                'status'          => 'ready',
+                'type'                => 'on_demand',
+                'label'               => $request->label,
+                'technician_note'     => $request->technician_note,
+                'status'              => 'ready',
+                'service_category_id' => $request->service_category_id
+                    ?? Setting::where('group', 'service_category')->whereJsonContains('meta->is_default', true)->value('id'),
             ]);
 
             $task->assets()->attach($request->asset_ids);

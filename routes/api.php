@@ -188,6 +188,8 @@ Route::prefix('v1')->group(function () {
         Route::get('settings/trashed', [SettingController::class, 'trashed']);
         Route::patch('settings/{id}/restore', [SettingController::class, 'restore']);
         Route::patch('settings/{setting}/set-default', [SettingController::class, 'setDefault']);
+        Route::get('settings/jsa-template', [SettingController::class, 'getJsaTemplate']);
+        Route::post('settings/jsa-template', [SettingController::class, 'saveJsaTemplate']);
 
         // File Upload
         Route::post('uploads', [UploadController::class, 'store']);

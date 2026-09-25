@@ -23,8 +23,8 @@ class ScheduleController extends Controller
 
         $appointments = Appointment::with(['technicians', 'task.property'])
             ->whereNull('deleted_at')
-            ->where('start_date_time', '>=', $from . ' 00:00:00')
             ->where('start_date_time', '<=', $to   . ' 23:59:59')
+            ->where('end_date_time',   '>=', $from . ' 00:00:00')
             ->when($myTechnician, fn ($q) =>
                 $q->whereHas('technicians', fn ($q2) => $q2->where('technicians.id', $myTechnician->id))
             )
@@ -53,9 +53,13 @@ class ScheduleController extends Controller
             'start'         => $a->start_date_time,
             'end'           => $a->end_date_time,
             'task_status'   => $a->task?->status,
-            'property_name' => $a->task?->property?->name,
-            'address'       => $a->task?->property?->formatted_address,
-            'technician_ids'=> $a->technicians->pluck('id')->values()->toArray(),
+            'property_id'     => $a->task?->property_id,
+            'property_name'   => $a->task?->property?->name,
+            'task_label'      => $a->task?->label,
+            'address'         => $a->task?->property?->formatted_address,
+            'access_schedule' => $a->task?->property?->access_schedule,
+            'technician_ids'  => $a->technicians->pluck('id')->values()->toArray(),
+            'technician_names'=> $a->technicians->pluck('full_name')->filter()->values()->toArray(),
         ]);
 
         return response()->json([

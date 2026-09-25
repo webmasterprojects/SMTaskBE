@@ -97,6 +97,31 @@ class SettingController extends Controller
         return response()->json($setting->fresh());
     }
 
+    // GET  /settings/jsa-template
+    public function getJsaTemplate(): JsonResponse
+    {
+        $setting = Setting::where('group', 'jsa_template')->where('key', 'default')->first();
+        return response()->json($setting ? ($setting->meta['questions'] ?? []) : []);
+    }
+
+    // POST /settings/jsa-template
+    public function saveJsaTemplate(Request $request): JsonResponse
+    {
+        $data = $request->validate([
+            'questions'              => ['present', 'array'],
+            'questions.*.question'   => ['required', 'string', 'max:500'],
+            'questions.*.type'       => ['required', 'in:yes_no,always_sometimes_never,text,checkbox'],
+            'questions.*.required'   => ['boolean'],
+        ]);
+
+        Setting::updateOrCreate(
+            ['group' => 'jsa_template', 'key' => 'default'],
+            ['value' => 'JSA Default Template', 'meta' => ['questions' => $data['questions']]]
+        );
+
+        return response()->json(['message' => 'JSA template saved']);
+    }
+
     public function trashed(Request $request): JsonResponse
     {
         $query = Setting::onlyTrashed()->orderBy('deleted_at', 'desc');

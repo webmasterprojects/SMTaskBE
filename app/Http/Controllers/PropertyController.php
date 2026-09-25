@@ -28,8 +28,23 @@ class PropertyController extends Controller
 
     public function store(StorePropertyRequest $request): JsonResponse
     {
+        $validated = $request->validated();
+
+        // Seed JSA questions from the global template if none provided
+        if (empty($validated['safety_policy'])) {
+            $template = \App\Models\Setting::where('group', 'jsa_template')->where('key', 'default')->first();
+            $validated['safety_policy'] = $template?->meta['questions'] ?? [
+                ['question' => 'Have you been briefed on the site-specific hazards and risks?',      'type' => 'yes_no', 'required' => true],
+                ['question' => 'Is the required PPE available and in good condition?',               'type' => 'yes_no', 'required' => true],
+                ['question' => 'Have you identified all emergency exits and first-aid stations?',    'type' => 'yes_no', 'required' => true],
+                ['question' => 'Are all tools and equipment in safe working order?',                 'type' => 'yes_no', 'required' => true],
+                ['question' => 'Have you reviewed the task steps and identified potential hazards?', 'type' => 'yes_no', 'required' => true],
+                ['question' => 'Are there any additional hazards or concerns to report?',            'type' => 'text',   'required' => false],
+            ];
+        }
+
         $property = Property::create([
-            ...$request->validated(),
+            ...$validated,
             'created_by' => auth()->id(),
         ]);
 
