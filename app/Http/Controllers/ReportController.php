@@ -255,6 +255,7 @@ class ReportController extends Controller
             'to'      => ['required', 'email'],
             'subject' => ['required', 'string'],
             'message' => ['nullable', 'string'],
+            'pdf'     => ['nullable', 'file', 'mimes:pdf', 'max:20480'],
         ]);
 
         $smtp = $this->getSettings('smtp_settings');
@@ -277,18 +278,29 @@ class ReportController extends Controller
             'name'    => $smtp['from_name'] ?? 'Service Matrix',
         ]);
 
-        $reportData = $report->data;
+        $reportData  = $report->data;
         $userMessage = $data['message'] ?? '';
+        $pdfFile     = $request->file('pdf');
 
-        $attachmentHtml = $this->buildReportAttachmentHtml($reportData);
-        $filename = 'Report-' . ($reportData['report_number'] ?? $report->id) . '.html';
-
-        Mail::mailer('smtp')->send([], [], function ($mail) use ($data, $reportData, $userMessage, $attachmentHtml, $filename) {
-            $mail->to($data['to'])
-                ->subject($data['subject'])
-                ->html($this->buildEmailHtml($reportData, $userMessage))
-                ->attachData($attachmentHtml, $filename, ['mime' => 'text/html']);
-        });
+        if ($pdfFile) {
+            $pdfBytes = file_get_contents($pdfFile->getRealPath());
+            $filename = 'Report-' . ($reportData['report_number'] ?? $report->id) . '.pdf';
+            Mail::mailer('smtp')->send([], [], function ($mail) use ($data, $reportData, $userMessage, $pdfBytes, $filename) {
+                $mail->to($data['to'])
+                    ->subject($data['subject'])
+                    ->html($this->buildEmailHtml($reportData, $userMessage))
+                    ->attachData($pdfBytes, $filename, ['mime' => 'application/pdf']);
+            });
+        } else {
+            $attachmentHtml = $this->buildReportAttachmentHtml($reportData);
+            $filename = 'Report-' . ($reportData['report_number'] ?? $report->id) . '.html';
+            Mail::mailer('smtp')->send([], [], function ($mail) use ($data, $reportData, $userMessage, $attachmentHtml, $filename) {
+                $mail->to($data['to'])
+                    ->subject($data['subject'])
+                    ->html($this->buildEmailHtml($reportData, $userMessage))
+                    ->attachData($attachmentHtml, $filename, ['mime' => 'text/html']);
+            });
+        }
 
         return response()->json(['message' => 'Email sent successfully']);
     }
