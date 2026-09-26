@@ -43,7 +43,7 @@ class SettingController extends Controller
     public function store(Request $request): JsonResponse
     {
         $data = $request->validate([
-            'group'      => ['required', 'string', 'in:section,sub_section,severity,remark_template,resolution_template,service_repair_note,task_status,report_settings,smtp_settings,map_settings,service_category'],
+            'group'      => ['required', 'string', 'in:section,sub_section,severity,remark_template,resolution_template,service_repair_note,task_status,report_settings,smtp_settings,map_settings,service_category,access_schedule,access_procedure'],
             'key'        => ['nullable', 'string'],
             'value'      => ['required', 'string'],
             'meta'       => ['nullable', 'array'],
@@ -108,10 +108,13 @@ class SettingController extends Controller
     public function saveJsaTemplate(Request $request): JsonResponse
     {
         $data = $request->validate([
-            'questions'              => ['present', 'array'],
-            'questions.*.question'   => ['required', 'string', 'max:500'],
-            'questions.*.type'       => ['required', 'in:yes_no,always_sometimes_never,text,checkbox'],
-            'questions.*.required'   => ['boolean'],
+            'questions'                        => ['present', 'array'],
+            'questions.*.question'             => ['required', 'string', 'max:500'],
+            'questions.*.type'                 => ['required', 'in:yes_no,always_sometimes_never,text,checkbox'],
+            'questions.*.required'             => ['boolean'],
+            'questions.*.showIf'               => ['nullable', 'array'],
+            'questions.*.showIf.questionIndex' => ['required_with:questions.*.showIf', 'integer', 'min:0'],
+            'questions.*.showIf.answer'        => ['required_with:questions.*.showIf', 'string'],
         ]);
 
         Setting::updateOrCreate(

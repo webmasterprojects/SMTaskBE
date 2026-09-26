@@ -24,10 +24,13 @@ class StorePropertyRequest extends FormRequest
             'access_note'       => ['nullable', 'string', 'max:2000'],
             'property_note'     => ['nullable', 'string', 'max:5000'],
             'status'                        => ['nullable', Rule::in(['draft', 'active', 'inactive'])],
-            'safety_policy'                 => ['nullable', 'array'],
-            'safety_policy.*.question'      => ['required_with:safety_policy', 'string', 'max:500'],
-            'safety_policy.*.type'          => ['required_with:safety_policy', 'string', Rule::in(['yes_no', 'always_sometimes_never', 'text', 'checkbox'])],
-            'safety_policy.*.required'      => ['required_with:safety_policy', 'boolean'],
+            'safety_policy'                              => ['nullable', 'array'],
+            'safety_policy.*.question'                   => ['required_with:safety_policy', 'string', 'max:500'],
+            'safety_policy.*.type'                       => ['required_with:safety_policy', 'string', Rule::in(['yes_no', 'always_sometimes_never', 'text', 'checkbox'])],
+            'safety_policy.*.required'                   => ['required_with:safety_policy', 'boolean'],
+            'safety_policy.*.showIf'                     => ['nullable', 'array'],
+            'safety_policy.*.showIf.questionIndex'       => ['required_with:safety_policy.*.showIf', 'integer', 'min:0'],
+            'safety_policy.*.showIf.answer'              => ['required_with:safety_policy.*.showIf', 'string'],
         ];
     }
 }

@@ -66,5 +66,44 @@ class SettingsSeeder extends Seeder
                 'updated_at' => $now,
             ]);
         }
+
+        // Access Schedule options
+        $schedules = [
+            ['key' => 'all_hours',        'value' => 'All Hours',          'sort_order' => 1],
+            ['key' => 'business_hours',   'value' => 'Business Hours',     'sort_order' => 2],
+            ['key' => 'restricted_hours', 'value' => 'Restricted Hours',   'sort_order' => 3],
+            ['key' => 'make_appointment', 'value' => 'Make Appointment',   'sort_order' => 4],
+            ['key' => 'pick_up_key',      'value' => 'Pick Up Key',        'sort_order' => 5],
+        ];
+        foreach ($schedules as $s) {
+            DB::table('settings')->insertOrIgnore([
+                'group'      => 'access_schedule',
+                'key'        => $s['key'],
+                'value'      => $s['value'],
+                'meta'       => null,
+                'is_active'  => true,
+                'sort_order' => $s['sort_order'],
+                'created_at' => $now,
+                'updated_at' => $now,
+            ]);
+        }
+
+        // Access Procedure options
+        $procedures = [
+            ['key' => 'identity_card', 'value' => 'Identity Card', 'sort_order' => 1],
+            ['key' => 'use_pin_code',  'value' => 'Use PIN Code',  'sort_order' => 2],
+        ];
+        foreach ($procedures as $s) {
+            DB::table('settings')->insertOrIgnore([
+                'group'      => 'access_procedure',
+                'key'        => $s['key'],
+                'value'      => $s['value'],
+                'meta'       => null,
+                'is_active'  => true,
+                'sort_order' => $s['sort_order'],
+                'created_at' => $now,
+                'updated_at' => $now,
+            ]);
+        }
     }
 }
