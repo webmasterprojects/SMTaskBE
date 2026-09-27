@@ -19,7 +19,7 @@ class TaskController extends Controller
     public function index(Request $request): JsonResponse
     {
         $tasks = Task::query()
-            ->with(['property', 'routines.asset', 'assets', 'appointments.technicians', 'serviceCategory'])
+            ->with(['property.client', 'routines.asset', 'assets', 'appointments.technicians', 'serviceCategory'])
             ->when($request->property_id, fn ($q) => $q->where('property_id', $request->property_id))
             ->when($request->type, fn ($q) => $q->where('type', $request->type))
             ->when($request->status, fn ($q) => $q->whereIn('status', array_filter(explode(',', $request->status))))
@@ -76,7 +76,7 @@ class TaskController extends Controller
     public function show(Task $task): JsonResponse
     {
         return response()->json(TaskResource::make(
-            $task->load(['property', 'routines.asset', 'assets', 'appointments.technicians', 'serviceCategory'])
+            $task->load(['property.client', 'routines.asset', 'assets', 'appointments.technicians', 'serviceCategory'])
         ));
     }
 

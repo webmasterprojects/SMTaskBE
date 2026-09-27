@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Report;
+use App\Models\ReportEmailLog;
 use App\Models\Setting;
 use App\Models\Task;
 use Illuminate\Http\JsonResponse;
@@ -225,8 +226,9 @@ class ReportController extends Controller
                 'strata_plan'  => $task->property?->strata_plan ?? '',
             ],
             'task'             => [
-                'id'    => $task->id,
-                'label' => $task->label,
+                'id'       => $task->id,
+                'label'    => $task->label,
+                'category' => $task->serviceCategory?->value ?? '',
             ],
             'issued_by'        => auth()->user()?->full_name ?? auth()->user()?->name,
             'issued_date'      => now()->format('jS F Y'),
@@ -302,7 +304,21 @@ class ReportController extends Controller
             });
         }
 
+        ReportEmailLog::create([
+            'report_id' => $report->id,
+            'to'        => $data['to'],
+            'subject'   => $data['subject'],
+            'sent_by'   => auth()->user()?->name ?? auth()->user()?->email,
+            'sent_at'   => now(),
+        ]);
+
         return response()->json(['message' => 'Email sent successfully']);
+    }
+
+    public function emailLogs(Report $report): JsonResponse
+    {
+        $logs = $report->emailLogs()->orderByDesc('sent_at')->limit(3)->get(['to', 'subject', 'sent_by', 'sent_at']);
+        return response()->json($logs);
     }
 
     // ── Test SMTP connection ───────────────────────────────────────────────────

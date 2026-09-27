@@ -177,6 +177,7 @@ Route::prefix('v1')->group(function () {
         Route::post('tasks/{task}/reports', [ReportController::class, 'store']);
         Route::get('reports/{report}', [ReportController::class, 'show']);
         Route::post('reports/{report}/send-email', [ReportController::class, 'sendEmail']);
+        Route::get('reports/{report}/email-logs', [ReportController::class, 'emailLogs']);
         Route::post('reports/test-smtp', [ReportController::class, 'testSmtp']);
 
         // Roles
