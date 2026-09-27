@@ -132,18 +132,31 @@ class TaskController extends Controller
     }
 
     // GET /tasks/{task}/asset-results
-    // Returns all property assets merged with this task's per-asset results
+    // Returns all saved task-asset results plus property assets without results
     public function assetResults(Task $task): JsonResponse
     {
         $task->load('property.assets');
 
-        // Map task-specific results keyed by asset_id
+        // All saved results for this task
         $results = DB::table('task_assets')
             ->where('task_id', $task->id)
             ->get()
             ->keyBy('asset_id');
 
-        $assets = ($task->property?->assets ?? collect())->map(function ($asset) use ($results) {
+        // Asset IDs that have saved results
+        $savedAssetIds = $results->keys()->toArray();
+
+        // Load any assets with saved results that aren't in property assets
+        $propertyAssetIds = ($task->property?->assets ?? collect())->pluck('id')->toArray();
+        $extraAssetIds = array_diff($savedAssetIds, $propertyAssetIds);
+        $extraAssets = $extraAssetIds
+            ? \App\Models\Asset::whereIn('id', $extraAssetIds)->get()
+            : collect();
+
+        // Combine property assets + extra assets (deduped)
+        $allAssets = ($task->property?->assets ?? collect())->merge($extraAssets);
+
+        $assets = $allAssets->map(function ($asset) use ($results) {
             $pivot = $results->get($asset->id);
             return [
                 'id'       => $asset->id,
