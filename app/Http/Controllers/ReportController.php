@@ -111,9 +111,10 @@ class ReportController extends Controller
         foreach ($severitySettings as $s) {
             $meta = $s->meta ?? [];
             $defectSummary[$s->value] = [
-                'severity' => $s->value,
-                'color'    => $meta['warning_color'] ?? '#6c757d',
-                'count'    => 0,
+                'severity'    => $s->value,
+                'description' => $meta['description'] ?? '',
+                'color'       => $meta['warning_color'] ?? '#6c757d',
+                'count'       => 0,
             ];
         }
         // Count any work history entry that has a severity set (FAIL or NO_TEST with severity)
