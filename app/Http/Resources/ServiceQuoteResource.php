@@ -35,6 +35,14 @@ class ServiceQuoteResource extends JsonResource
             'total_profit'      => $this->total_profit,
             'total_quantity'    => $this->total_quantity,
             'quote_assets'      => $this->whenLoaded('quoteAssets'),
+            'property_details'  => $this->whenLoaded('property', fn () => $this->property ? [
+                'name'    => $this->property->name,
+                'address' => $this->property->formatted_address,
+            ] : null),
+            'client_details'    => $this->whenLoaded('client', fn () => $this->client ? [
+                'name'  => $this->client->name,
+                'email' => $this->client->email,
+            ] : null),
             'created_at'        => $this->created_at,
             'updated_at'        => $this->updated_at,
         ];

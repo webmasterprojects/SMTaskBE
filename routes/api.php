@@ -171,6 +171,7 @@ Route::prefix('v1')->group(function () {
             'service-quotes/{serviceQuote}/assets/{asset}/status',
             [ServiceQuoteController::class, 'updateAssetStatus']
         );
+        Route::post('service-quotes/{serviceQuote}/send-email', [ServiceQuoteController::class, 'sendEmail']);
 
         // Reports
         Route::get('tasks/{task}/reports', [ReportController::class, 'index']);
