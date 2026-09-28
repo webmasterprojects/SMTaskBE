@@ -72,6 +72,29 @@ class AuthController extends Controller
         return response()->json($user->preferences);
     }
 
+    public function changePassword(Request $request): JsonResponse
+    {
+        $data = $request->validate([
+            'current_password' => ['required', 'string'],
+            'new_password'     => ['required', 'string', 'min:8', 'confirmed'],
+        ]);
+
+        $user = $request->user();
+
+        if (! \Illuminate\Support\Facades\Hash::check($data['current_password'], $user->password)) {
+            throw ValidationException::withMessages([
+                'current_password' => ['The current password is incorrect.'],
+            ]);
+        }
+
+        $user->update(['password' => \Illuminate\Support\Facades\Hash::make($data['new_password'])]);
+
+        // Revoke all other tokens so existing sessions are invalidated
+        $user->tokens()->where('id', '!=', $request->user()->currentAccessToken()->id)->delete();
+
+        return response()->json(['message' => 'Password changed successfully.']);
+    }
+
     public function refresh(Request $request): JsonResponse
     {
         $user = $request->user();

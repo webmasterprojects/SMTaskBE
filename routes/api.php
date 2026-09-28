@@ -37,6 +37,7 @@ Route::prefix('v1')->group(function () {
 
         Route::post('/auth/logout', [AuthController::class, 'logout']);
         Route::post('/auth/refresh', [AuthController::class, 'refresh']);
+        Route::post('/auth/change-password', [AuthController::class, 'changePassword']);
         Route::get('/auth/me', [AuthController::class, 'me']);
         Route::get('/auth/preferences', [AuthController::class, 'getPreferences']);
         Route::patch('/auth/preferences', [AuthController::class, 'updatePreferences']);
