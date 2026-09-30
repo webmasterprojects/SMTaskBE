@@ -42,7 +42,18 @@ class AuthController extends Controller
 
     public function logout(Request $request): JsonResponse
     {
-        $request->user()->currentAccessToken()->delete();
+        // Revoke Bearer token if the request was token-authenticated
+        $token = $request->user()?->currentAccessToken();
+        if ($token && ! ($token instanceof \Laravel\Sanctum\TransientToken)) {
+            $token->delete();
+        }
+
+        // Destroy web session (cookie-based SPA auth)
+        Auth::guard('web')->logout();
+        if ($request->hasSession()) {
+            $request->session()->invalidate();
+            $request->session()->regenerateToken();
+        }
 
         return response()->json(['message' => 'Logged out successfully.']);
     }

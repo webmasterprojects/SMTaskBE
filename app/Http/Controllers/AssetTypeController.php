@@ -82,6 +82,41 @@ class AssetTypeController extends Controller
         ], 201);
     }
 
+    public function updateVariant(Request $request, AssetType $assetType, AssetTypeVariant $variant): JsonResponse
+    {
+        abort_if($variant->asset_type_id !== $assetType->id, 403);
+
+        $data = $request->validate([
+            'name'  => ['required', 'string', 'max:255'],
+            'price' => ['nullable', 'numeric', 'min:0'],
+        ]);
+
+        $variant->update(['name' => $data['name'], 'price' => $data['price'] ?? 0]);
+
+        return response()->json([
+            'id'    => $variant->id,
+            'uid'   => (string) $variant->id,
+            'name'  => $variant->name,
+            'price' => $variant->price,
+        ]);
+    }
+
+    public function destroyVariant(AssetType $assetType, AssetTypeVariant $variant): JsonResponse
+    {
+        abort_if($variant->asset_type_id !== $assetType->id, 403);
+
+        $usedBy = \App\Models\Asset::where('asset_type_variant_id', $variant->id)->count();
+        if ($usedBy > 0) {
+            return response()->json([
+                'message' => "Cannot delete variant \"{$variant->name}\" — it is used by {$usedBy} asset(s). Reassign those assets first.",
+            ], 422);
+        }
+
+        $variant->delete();
+
+        return response()->json(null, 204);
+    }
+
     public function storeFailingRemark(Request $request, AssetType $assetType): JsonResponse
     {
         $data = $request->validate([
@@ -117,19 +152,16 @@ class AssetTypeController extends Controller
     public function update(Request $request, AssetType $assetType): JsonResponse
     {
         $data = $request->validate([
-            'name'           => ['nullable', 'string', 'max:255'],
-            'is_active'      => ['nullable', 'boolean'],
-            'tags'           => ['nullable', 'array'],
-            'category'       => ['nullable', 'string', 'max:255'],
-            'sub_category'   => ['nullable', 'string', 'max:255'],
-            'classification'    => ['nullable', 'string', 'max:255'],
+            'name'                => ['nullable', 'string', 'max:255'],
+            'is_active'           => ['nullable', 'boolean'],
+            'tags'                => ['nullable', 'array'],
+            'category'            => ['nullable', 'string', 'max:255'],
+            'sub_category'        => ['nullable', 'string', 'max:255'],
+            'classification'      => ['nullable', 'string', 'max:255'],
             'default_frequency'   => ['nullable', 'array'],
             'default_frequency.*' => ['string', 'in:MONTHLY,QUARTERLY,SIX-MONTHLY,ANNUALLY,TWO-YEARLY,FIVE-YEARLY'],
             'default_fields'      => ['nullable', 'array'],
             'default_fields.*'    => ['string'],
-            'variants'       => ['nullable', 'array'],
-            'variants.*.name'  => ['required_with:variants', 'string', 'max:255'],
-            'variants.*.price' => ['nullable', 'numeric', 'min:0'],
         ]);
 
         $assetType->update([
@@ -142,16 +174,6 @@ class AssetTypeController extends Controller
             'default_frequency' => array_key_exists('default_frequency', $data) ? $data['default_frequency'] : $assetType->default_frequency,
             'default_fields'    => array_key_exists('default_fields', $data) ? $data['default_fields'] : $assetType->default_fields,
         ]);
-
-        // Sync variants: delete existing, recreate from request
-        if (array_key_exists('variants', $data)) {
-            $assetType->variants()->delete();
-            if (! empty($data['variants'])) {
-                $assetType->variants()->createMany(
-                    array_map(fn ($v) => ['name' => $v['name'], 'price' => $v['price'] ?? 0], $data['variants'])
-                );
-            }
-        }
 
         return response()->json(AssetTypeResource::make($assetType->fresh(['variants', 'failingRemarks'])));
     }

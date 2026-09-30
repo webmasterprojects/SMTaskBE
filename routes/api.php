@@ -73,6 +73,8 @@ Route::prefix('v1')->group(function () {
 
         Route::apiResource('asset-types', AssetTypeController::class);
         Route::post('asset-types/{assetType}/variants', [AssetTypeController::class, 'storeVariant']);
+        Route::put('asset-types/{assetType}/variants/{variant}', [AssetTypeController::class, 'updateVariant']);
+        Route::delete('asset-types/{assetType}/variants/{variant}', [AssetTypeController::class, 'destroyVariant']);
         Route::post('asset-types/{assetType}/failing-remarks', [AssetTypeController::class, 'storeFailingRemark']);
         Route::put('asset-types/{assetType}/failing-remarks/{remark}', [AssetTypeController::class, 'updateFailingRemark']);
         Route::delete('asset-types/{assetType}/failing-remarks/{remark}', [AssetTypeController::class, 'destroyFailingRemark']);
