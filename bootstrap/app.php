@@ -21,6 +21,12 @@ return Application::configure(basePath: dirname(__DIR__))
             \Laravel\Sanctum\Http\Middleware\EnsureFrontendRequestsAreStateful::class,
         ]);
 
+        // Use custom VerifyCsrfToken that excludes auth routes
+        $middleware->replace(
+            \Illuminate\Foundation\Http\Middleware\VerifyCsrfToken::class,
+            \App\Http\Middleware\VerifyCsrfToken::class,
+        );
+
         $middleware->append(SecurityHeaders::class);
 
         $middleware->alias([
