@@ -27,6 +27,8 @@ return [
         'https://peru-grasshopper-519927.hostingersite.com',
         'https://pg.servicematrix.com.au',
         'http://pg.servicematrix.com.au',
+        'https://pf.servicematrix.com.au',
+        'http://pf.servicematrix.com.au',
     ],
 
     'allowed_origins_patterns' => [],
