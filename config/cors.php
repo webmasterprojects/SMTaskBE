@@ -29,6 +29,8 @@ return [
         'http://pg.servicematrix.com.au',
         'https://pf.servicematrix.com.au',
         'http://pf.servicematrix.com.au',
+        'https://eva.servicematrix.com.au',
+        'http://eva.servicematrix.com.au',
     ],
 
     'allowed_origins_patterns' => [],
