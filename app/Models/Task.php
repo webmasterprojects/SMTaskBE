@@ -17,7 +17,7 @@ class Task extends Model
     protected $fillable = [
         'property_id', 'created_by', 'type', 'label',
         'tags', 'technician_note', 'invoice_note', 'logbook', 'status', 'internal_note',
-        'service_category_id',
+        'service_category_id', 'defect_quote_id',
     ];
 
     protected $casts = [
@@ -35,7 +35,8 @@ class Task extends Model
 
     public function routines(): BelongsToMany
     {
-        return $this->belongsToMany(Routine::class, 'task_routines');
+        return $this->belongsToMany(Routine::class, 'task_routines')
+            ->withPivot('active_frequency');
     }
 
     public function reports(): HasMany      { return $this->hasMany(Report::class); }

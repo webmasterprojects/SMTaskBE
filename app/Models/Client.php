@@ -13,7 +13,8 @@ class Client extends Model
     use HasFactory, SoftDeletes;
 
     protected $fillable = [
-        'name', 'email', 'phone_number', 'address', 'status', 'notes', 'created_by',
+        'name', 'email', 'phone_number', 'address', 'billing_name', 'billing_address',
+        'status', 'notes', 'created_by',
     ];
 
     public function createdBy(): BelongsTo

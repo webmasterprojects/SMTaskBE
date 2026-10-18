@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Http\Resources\ServiceQuoteResource;
 use App\Models\ServiceQuote;
 use App\Models\Setting;
+use App\Models\Task;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Config;
@@ -45,7 +46,7 @@ class ServiceQuoteController extends Controller
             'scope_of_work'    => ['nullable', 'string'],
             'terms_and_condition' => ['nullable', 'string'],
             'internal_note'    => ['nullable', 'string'],
-            'status'           => ['nullable', Rule::in(['draft', 'sent', 'approved', 'declined', 'cancelled'])],
+            'status'           => ['nullable', Rule::in(['draft', 'sent', 'approved', 'declined', 'cancelled', 'invoice_done', 'repair_task_created'])],
         ]);
 
         $quote = ServiceQuote::create([
@@ -172,5 +173,59 @@ class ServiceQuoteController extends Controller
         }
 
         return response()->json(['message' => 'Email sent successfully']);
+    }
+
+    public function createRepairTask(Request $request, ServiceQuote $serviceQuote): JsonResponse
+    {
+        if ($serviceQuote->status !== 'approved') {
+            return response()->json(['message' => 'Quote must be approved before creating a repair task.'], 422);
+        }
+
+        $task = Task::create([
+            'property_id'     => $serviceQuote->property_id,
+            'created_by'      => auth()->id(),
+            'type'            => 'on_demand',
+            'label'           => 'Repair — DQ#' . $serviceQuote->id,
+            'status'          => 'ready',
+            'internal_note'   => 'Created from Defect Quote #' . $serviceQuote->id,
+            'defect_quote_id' => $serviceQuote->id,
+        ]);
+
+        // Link the DQ to the repair task and mark it as repair_task_created
+        $serviceQuote->update(['task_id' => $task->id, 'status' => 'repair_task_created']);
+
+        // Collect asset IDs from DQ products — use stored asset_id first,
+        // then fall back to matching property assets by label
+        $assetIds = $serviceQuote->quoteAssets()
+            ->whereNotNull('asset_id')
+            ->pluck('asset_id')
+            ->unique();
+
+        if ($assetIds->isEmpty()) {
+            $labels = $serviceQuote->quoteAssets()->pluck('label')->unique()->filter();
+            if ($labels->isNotEmpty()) {
+                $assetIds = \App\Models\Asset::where('property_id', $serviceQuote->property_id)
+                    ->whereIn('label', $labels)
+                    ->pluck('id')
+                    ->unique();
+            }
+        }
+
+        if ($assetIds->isNotEmpty()) {
+            $routineIds = \App\Models\Routine::where('property_id', $serviceQuote->property_id)
+                ->whereIn('asset_id', $assetIds)
+                ->where('status', 'active')
+                ->pluck('id');
+
+            if ($routineIds->isNotEmpty()) {
+                $task->routines()->attach($routineIds);
+            }
+        }
+
+        return response()->json([
+            'message' => 'Repair task created successfully.',
+            'task_id' => $task->id,
+            'property_id' => $task->property_id,
+        ], 201);
     }
 }

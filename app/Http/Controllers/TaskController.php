@@ -7,8 +7,10 @@ use App\Http\Requests\Task\CreateRoutineTaskRequest;
 use App\Http\Requests\Task\UpdateTaskRequest;
 use App\Http\Resources\TaskResource;
 use App\Models\Asset;
+use App\Models\Routine;
 use App\Models\Setting;
 use App\Models\Task;
+use Carbon\Carbon;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -64,7 +66,27 @@ class TaskController extends Controller
             ]);
 
             if (!empty($request->routine_ids)) {
-                $task->routines()->attach($request->routine_ids);
+                // Parse year/month from label (e.g. "task-october-2026") to compute active frequency
+                $targetDate = null;
+                if ($request->label && preg_match('/task-(\w+)-(\d{4})$/i', $request->label, $m)) {
+                    $targetDate = Carbon::parse("1 {$m[1]} {$m[2]}");
+                }
+
+                $pivotData = [];
+                $routines = Routine::whereIn('id', $request->routine_ids)->get()->keyBy('id');
+                foreach ($request->routine_ids as $routineId) {
+                    $routine = $routines[$routineId] ?? null;
+                    $activeFrequency = null;
+                    if ($routine && $targetDate) {
+                        // month is 0-indexed in frontend logic (JS Date.month), Carbon is 1-indexed
+                        $activeFrequency = $routine->activeFrequencyInMonth(
+                            $targetDate->year,
+                            $targetDate->month - 1  // convert to 0-indexed to match frontend
+                        );
+                    }
+                    $pivotData[$routineId] = ['active_frequency' => $activeFrequency];
+                }
+                $task->routines()->attach($pivotData);
             }
 
             return $task;

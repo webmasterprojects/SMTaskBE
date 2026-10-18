@@ -11,6 +11,7 @@ use App\Http\Controllers\PropertyContactController;
 use App\Http\Controllers\PropertyController;
 use App\Http\Controllers\ReportController;
 use App\Http\Controllers\RoutineController;
+use App\Http\Controllers\InvoiceController;
 use App\Http\Controllers\ServiceQuoteController;
 use App\Http\Controllers\TaskProductController;
 use App\Http\Controllers\TaskController;
@@ -167,6 +168,10 @@ Route::prefix('v1')->group(function () {
         Route::patch('tasks/{task}/products/{product}', [TaskProductController::class, 'update']);
         Route::delete('tasks/{task}/products/{product}', [TaskProductController::class, 'destroy']);
 
+        // Invoices
+        Route::apiResource('invoices', InvoiceController::class);
+        Route::post('invoices/{invoice}/send', [InvoiceController::class, 'sendEmail']);
+
         // Service Quotes
         Route::apiResource('service-quotes', ServiceQuoteController::class);
         Route::post('service-quotes/{serviceQuote}/assets', [ServiceQuoteController::class, 'addAsset']);
@@ -175,6 +180,7 @@ Route::prefix('v1')->group(function () {
             [ServiceQuoteController::class, 'updateAssetStatus']
         );
         Route::post('service-quotes/{serviceQuote}/send-email', [ServiceQuoteController::class, 'sendEmail']);
+        Route::post('service-quotes/{serviceQuote}/create-repair-task', [ServiceQuoteController::class, 'createRepairTask']);
 
         // Reports
         Route::get('tasks/{task}/reports', [ReportController::class, 'index']);

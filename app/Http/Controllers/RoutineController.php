@@ -14,12 +14,21 @@ class RoutineController extends Controller
     public function index(Request $request): JsonResponse
     {
         $routines = Routine::query()
-            ->with(['asset', 'property'])
+            ->with(['asset.assetType', 'asset.assetTypeVariant', 'property'])
             ->when($request->property_id, fn ($q) => $q->where('property_id', $request->property_id))
             ->when($request->asset_id, fn ($q) => $q->where('asset_id', $request->asset_id))
             ->when($request->status, fn ($q) => $q->where('status', $request->status))
+            ->when($request->get('query'), function ($q) use ($request) {
+                $search = '%' . $request->get('query') . '%';
+                $q->where(function ($sub) use ($search) {
+                    $sub->whereHas('asset.assetType', fn ($t) => $t->where('name', 'like', $search))
+                        ->orWhereHas('asset.assetTypeVariant', fn ($t) => $t->where('name', 'like', $search))
+                        ->orWhereHas('asset', fn ($t) => $t->where('location', 'like', $search)->orWhere('label', 'like', $search))
+                        ->orWhereHas('property', fn ($t) => $t->where('name', 'like', $search));
+                });
+            })
             ->orderBy('created_at', 'desc')
-            ->paginate($request->per_page ?? 20);
+            ->paginate($request->get('limit') ?? $request->get('per_page') ?? 20);
 
         return response()->json(RoutineResource::collection($routines)->response()->getData(true));
     }
@@ -31,12 +40,12 @@ class RoutineController extends Controller
             'created_by' => auth()->id(),
         ]);
 
-        return response()->json(RoutineResource::make($routine->load('asset', 'property')), 201);
+        return response()->json(RoutineResource::make($routine->load('asset.assetType', 'asset.assetTypeVariant', 'property')), 201);
     }
 
     public function show(Routine $routine): JsonResponse
     {
-        return response()->json(RoutineResource::make($routine->load('asset', 'property')));
+        return response()->json(RoutineResource::make($routine->load('asset.assetType', 'asset.assetTypeVariant', 'property')));
     }
 
     public function update(StoreRoutineRequest $request, Routine $routine): JsonResponse

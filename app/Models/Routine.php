@@ -34,6 +34,75 @@ class Routine extends Model
         return $this->belongsToMany(Task::class, 'task_routines');
     }
 
+    // Frequency → month interval map (mirrors frontend FREQ_MONTHS)
+    private const FREQ_MONTHS = [
+        'MONTHLY'      => 1,
+        'QUARTERLY'    => 3,
+        'SIX-MONTHLY'  => 6,
+        'ANNUALLY'     => 12,
+        'TWO-YEARLY'   => 24,
+        'FIVE-YEARLY'  => 60,
+    ];
+
+    /**
+     * Returns all frequencies that produce an occurrence in the given year/month.
+     * Mirrors the frontend getDueFrequenciesInMonth() logic exactly.
+     */
+    public function dueFrequenciesInMonth(int $year, int $month): array
+    {
+        if (empty($this->frequency)) return [];
+        $anchor = $this->annual_date ?? $this->start_date;
+        if (!$anchor) return [];
+
+        $start  = $this->start_date ? Carbon::parse($this->start_date) : Carbon::parse($anchor);
+        $end    = $this->end_date   ? Carbon::parse($this->end_date)   : Carbon::now()->addYears(5);
+
+        // Normalize: snake_case → UPPER-HYPHEN (e.g. six_monthly → SIX-MONTHLY)
+        $normalize = fn (string $f): string => strtoupper(str_replace('_', '-', $f));
+
+        $due = [];
+        foreach ($this->frequency as $freq) {
+            $normFreq = $normalize($freq);
+            $interval = self::FREQ_MONTHS[$normFreq] ?? null;
+            if (!$interval) continue;
+
+            $cursor = Carbon::parse($anchor);
+
+            // Step cursor back to or before start
+            while ($cursor->gt($start)) {
+                $cursor->subMonths($interval);
+            }
+            // Step cursor forward to at or after start
+            while ($cursor->lt($start)) {
+                $cursor->addMonths($interval);
+            }
+
+            $guard = 0;
+            while ($cursor->lte($end) && $guard < 200) {
+                if ($cursor->year === $year && ($cursor->month - 1) === $month) {
+                    $due[] = $normFreq;
+                    break;
+                }
+                $cursor->addMonths($interval);
+                $guard++;
+            }
+        }
+
+        return $due;
+    }
+
+    /**
+     * Returns the single highest-priority (longest interval) frequency due in the given month,
+     * or null if none are due.
+     */
+    public function activeFrequencyInMonth(int $year, int $month): ?string
+    {
+        $due = $this->dueFrequenciesInMonth($year, $month);
+        if (empty($due)) return null;
+
+        return collect($due)->sortByDesc(fn ($f) => self::FREQ_MONTHS[$f] ?? 0)->first();
+    }
+
     public function nextDueDate(string $freq): ?Carbon
     {
         $anchor = $this->annual_date;

@@ -15,8 +15,10 @@ class StoreClientRequest extends FormRequest
             'name'         => ['required', 'string', 'max:255'],
             'email'        => ['nullable', 'email', 'max:255'],
             'phone_number' => ['nullable', 'string', 'max:50'],
-            'address'      => ['nullable', 'string', 'max:1000'],
-            'status'       => ['nullable', Rule::in(['active', 'inactive', 'archived'])],
+            'address'         => ['nullable', 'string', 'max:1000'],
+            'billing_name'    => ['nullable', 'string', 'max:255'],
+            'billing_address' => ['nullable', 'string', 'max:2000'],
+            'status'          => ['nullable', Rule::in(['active', 'inactive', 'archived'])],
             'notes'        => ['nullable', 'string', 'max:5000'],
         ];
     }
