@@ -199,6 +199,7 @@ class ReportController extends Controller
                 'id'               => $asset?->id,
                 'label'            => $asset?->label ?? '',
                 'location'         => $asset?->location ?? '',
+                'variant'          => $asset?->assetTypeVariant?->name ?? '',
                 'status'           => $assetStatus,
                 'severity_summary' => array_values($assetSevSummary),
                 'defects'          => $defects,

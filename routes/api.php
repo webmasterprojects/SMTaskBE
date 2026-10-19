@@ -32,6 +32,18 @@ Route::prefix('v1')->group(function () {
     // Public
     Route::post('/auth/login', [AuthController::class, 'login'])->middleware('throttle:login');
     Route::get('/app', [SettingController::class, 'appPublic']);
+    Route::get('/storage-proxy', function (\Illuminate\Http\Request $request) {
+        $path = $request->query('path');
+        if (!$path) return response()->json(['error' => 'Missing path'], 400);
+        $disk = \Illuminate\Support\Facades\Storage::disk(config('filesystems.default', 'public'));
+        if (!$disk->exists($path)) return response()->json(['error' => 'Not found'], 404);
+        return response()->stream(function () use ($disk, $path) {
+            echo $disk->get($path);
+        }, 200, [
+            'Content-Type'  => $disk->mimeType($path) ?: 'application/octet-stream',
+            'Cache-Control' => 'public, max-age=3600',
+        ]);
+    });
 
     // Authenticated
     Route::middleware('auth:sanctum')->group(function () {
