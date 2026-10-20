@@ -30,8 +30,6 @@ class AuthController extends Controller
 
         $deviceName = $request->input('device_name', 'api-token');
 
-        $user->tokens()->where('name', $deviceName)->delete();
-
         $token = $user->createToken($deviceName);
 
         return response()->json([
@@ -61,6 +59,41 @@ class AuthController extends Controller
     public function me(Request $request): JsonResponse
     {
         return response()->json(UserResource::make($request->user()->load('technician', 'linkedRole')));
+    }
+
+    public function updateProfile(Request $request): JsonResponse
+    {
+        $data = $request->validate([
+            'name'         => ['required', 'string', 'max:255'],
+            'phone_number' => ['nullable', 'string', 'max:50'],
+        ]);
+
+        $user = $request->user();
+        $user->update($data);
+
+        return response()->json(UserResource::make($user->load('technician', 'linkedRole')));
+    }
+
+    public function sessions(Request $request): JsonResponse
+    {
+        $currentToken = $request->user()->currentAccessToken();
+        $currentId = ($currentToken instanceof \Laravel\Sanctum\TransientToken) ? null : $currentToken->id;
+
+        $tokens = $request->user()->tokens()->orderByDesc('last_used_at')->get()
+            ->map(fn($t) => [
+                'id'           => $t->id,
+                'name'         => $t->name,
+                'last_used_at' => $t->last_used_at,
+                'created_at'   => $t->created_at,
+                'is_current'   => $currentId !== null && $t->id === $currentId,
+            ]);
+        return response()->json($tokens);
+    }
+
+    public function revokeSession(Request $request, int $tokenId): JsonResponse
+    {
+        $request->user()->tokens()->where('id', $tokenId)->delete();
+        return response()->json(['message' => 'Session revoked.']);
     }
 
     public function getPreferences(Request $request): JsonResponse

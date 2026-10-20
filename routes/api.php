@@ -52,6 +52,9 @@ Route::prefix('v1')->group(function () {
         Route::post('/auth/refresh', [AuthController::class, 'refresh']);
         Route::post('/auth/change-password', [AuthController::class, 'changePassword']);
         Route::get('/auth/me', [AuthController::class, 'me']);
+        Route::patch('/auth/profile', [AuthController::class, 'updateProfile']);
+        Route::get('/auth/sessions', [AuthController::class, 'sessions']);
+        Route::delete('/auth/sessions/{tokenId}', [AuthController::class, 'revokeSession']);
         Route::get('/auth/preferences', [AuthController::class, 'getPreferences']);
         Route::patch('/auth/preferences', [AuthController::class, 'updatePreferences']);
 
